@@ -7,6 +7,12 @@ It requests and receives sensor data (specified in the `src/ros_bridge/resources
 
 This node is currently available only for ROS 2.
 
+## Configuration
+The package comes with the default configuration for a Darwin-OP robot, but you can easily change it to your robot.
+The `ressources/devices.json` contains the definition of the devices (sensors and actuators).
+You can set the used network configuration and the ROS topic names via ROS parameters (see `launch/ros_bridge.launch`).
+Remember to rebuild the package after changing the json file.
+
 ## Usage
 
 Clone the repository:
@@ -35,9 +41,10 @@ In the root of the repository, source your overlay using:
 
 `. install/local_setup.bash`
 
-Run the node using this command:
+Run the node using one of these commands:
 
 `ros2 run ros_bridge webots_controller --ros-args -p host:="127.0.0.1" -p port:=10001`
+`ros2 launch ros_bridge ros_bridge.launch`
 
 (you can replace host and port with your preferred ones)
 

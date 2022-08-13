@@ -31,22 +31,25 @@ public:
 
     // Publishers
     clock_publisher_ = this->create_publisher<rosgraph_msgs::msg::Clock>("clock", 10);
-    image_publisher_ = this->create_publisher<sensor_msgs::msg::Image>("image", 10);
-    sensor_publisher_ = this->create_publisher<sensor_msgs::msg::JointState>("sensor", 10);
-    gyro_publisher_ = this->create_publisher<sensor_msgs::msg::Imu>("gyro", 10);
+    camera_image_publishers_ = {};
+    camera_info_publishers_ = {};
+    imu_publishers_ = {};       
 
     // Subscriptions
     motor_command_subscription_ = this->create_subscription<sensor_msgs::msg::JointState>(
         "command", 10, std::bind(&WebotsController::command_callback, this, _1));
 
     // Timer and its callback
+    //todo would it make sense to rather do this as a callback of /clock? We basically want to do this exactly once the simulation does a step, it does not really make sense to run this in any other frequency
     timer_ = this->create_wall_timer(
         8ms, std::bind(&WebotsController::timer_callback, this));
 
     // Client construction and connecting
-    this->get_parameter("host", host_);
-    this->get_parameter("port", port_);
-    client = new RobotClient(host_, port_, 3);
+    std::string host;
+    int port;
+    this->get_parameter("host", host);
+    this->get_parameter("port", port);
+    client = new RobotClient(host, port, 3);
     client->connectClient();
 
     // Enable devices
@@ -55,36 +58,45 @@ public:
     std::ifstream json_file("resources/devices.json");
     json_file >> devices;
 
+    // Joints
+    for (unsigned int i = 0; i < devices["joints"].size(); i++) {
+      SensorTimeStep* sensor = request.add_sensor_time_steps();
+      sensor->set_name(devices["joints"][i]["proto_sensor_name"].asString());
+      sensor->set_timestep(devices["joints"][i]["time_step"].asDouble());
+    }
+    joint_state_publisher_ =
+        this->create_publisher<sensor_msgs::msg::JointState>(devices["joint_state_topic_name"].asString(), 10);
+    
     // Cameras
     for (unsigned int i = 0; i < devices["cameras"].size(); i++) {
       SensorTimeStep *camera_sensor = request.add_sensor_time_steps();
-      camera_sensor->set_name(devices["cameras"][i]["name"].asString());
+      camera_sensor->set_name(devices["cameras"][i]["proto_camera_name"].asString());
       camera_sensor->set_timestep(devices["cameras"][i]["time_step"].asDouble());
+      camera_image_publishers_.push_back(
+          this->create_publisher<sensor_msgs::msg::Image>(devices["cameras"][i]["image_topic_name"].asString(), 10));
+      // camera info should be latched and only published once
+      // todo
+      // auto qos = rclcpp::QoS(rclcpp::QoSInitialization(qos_profile.durability, transient local), qos_profile);
+      // camera_info_publishers_.push_back(this->create_publisher<sensor_msgs::msg::CameraInfo>(devices["cameras"][i]["info_topic_name"].asString(),
+      // 10)); //todo latch
     }
 
-    // Position sensors
-    for (unsigned int i = 0; i < devices["joints"].size(); i++) {
+    // IMUs
+    for (unsigned int i = 0; i < devices["IMUs"].size(); i++) {
+      // gyro
       SensorTimeStep *sensor = request.add_sensor_time_steps();
-      sensor->set_name(devices["joints"][i]["sensor_name"].asString());
-      sensor->set_timestep(devices["joints"][i]["time_step"].asDouble());
-    }
-
-    // Gyros
-    for (unsigned int i = 0; i < devices["gyros"].size(); i++) {
-      SensorTimeStep *sensor = request.add_sensor_time_steps();
-      sensor->set_name(devices["gyros"][i]["name"].asString());
-      sensor->set_timestep(devices["gyros"][i]["time_step"].asDouble());
-    }
-
-    // Accelerometers
-    for (unsigned int i = 0; i < devices["accelerometers"].size(); i++) {
-      SensorTimeStep *sensor = request.add_sensor_time_steps();
-      sensor->set_name(devices["accelerometers"][i]["name"].asString());
-      sensor->set_timestep(devices["accelerometers"][i]["time_step"].asDouble());
+      sensor->set_name(devices["IMUs"][i]["proto_gyro_name"].asString());
+      sensor->set_timestep(devices["IMUs"][i]["time_step"].asDouble());
+      // accel
+      sensor = request.add_sensor_time_steps();
+      sensor->set_name(devices["IMUs"][i]["proto_accel_name"].asString());
+      sensor->set_timestep(devices["IMUs"][i]["time_step"].asDouble());
+      imu_publishers_.push_back(
+          this->create_publisher<sensor_msgs::msg::Imu>(devices["IMUs"][i]["topic_name"].asString(), 10));
     }
 
     client->sendRequest(request);
-    SensorMeasurements sensors = client->receive();
+    SensorMeasurements measurements = client->receive();
   }
 
 private:
@@ -93,12 +105,13 @@ private:
       try {
         ActuatorRequests request;
         client->sendRequest(request);
-        SensorMeasurements sensors = client->receive();
+        SensorMeasurements measurements = client->receive();
         auto clk = rosgraph_msgs::msg::Clock();
-        clk.clock = rclcpp::Time(sensors.time());
+        clk.clock = rclcpp::Time(measurements.time());
         clock_publisher_->publish(clk);
-        publishImage(sensors);
-        publishSensors(sensors);
+        publishJointStates(measurements);
+        publishImage(measurements);        
+        publishIMUs(measurements);
       }
       catch (const std::runtime_error &exc) {
         std::cerr << "Runtime error: " << exc.what() << std::endl;
@@ -106,9 +119,21 @@ private:
     }
   }
 
-  void publishImage(const SensorMeasurements &sensors) {
-    for (int i = 0; i < sensors.cameras_size(); i++) {
-      const CameraMeasurement &sensor_data = sensors.cameras(i);
+  void publishJointStates(const SensorMeasurements& measurements) {
+    auto jointmsg = sensor_msgs::msg::JointState();
+    for (int i = 0; i < measurements.position_sensors_size(); i++) {
+      jointmsg.name.push_back(measurements.position_sensors(i).name());
+      jointmsg.position.push_back(measurements.position_sensors(i).value());
+      //todo velocity? effort?
+    }
+    jointmsg.header.stamp = rclcpp::Time(measurements.time());
+    joint_state_publisher_->publish(jointmsg);
+  }
+
+  void publishImage(const SensorMeasurements &measurements) {
+    // iterate over the used cameras
+    for (int i = 0; i < measurements.cameras_size(); i++) {
+      const CameraMeasurement &sensor_data = measurements.cameras(i);
       if (sensor_data.quality() != -1) {
         throw std::runtime_error("Encoded images are not supported in this client");
       }
@@ -119,21 +144,37 @@ private:
       cv_bridge::CvImage img_bridge;
       img_bridge = cv_bridge::CvImage(std_msgs::msg::Header(), sensor_msgs::image_encodings::BGR8, img);
       img_bridge.toImageMsg(imgmsg);
-      image_publisher_->publish(imgmsg);
+      imgmsg.header.stamp = rclcpp::Time(measurements.time());
+      //todo frame id?
+      camera_image_publishers_[i]->publish(imgmsg);
     }
   }
 
-  void publishSensors(const SensorMeasurements &sensors) {
-    auto jointmsg = sensor_msgs::msg::JointState();
-    for (int i = 0; i < sensors.position_sensors_size(); i++) {
-      jointmsg.name.push_back(sensors.position_sensors(i).name());
-      jointmsg.position.push_back(sensors.position_sensors(i).value());
+  void publishIMUs(const SensorMeasurements &measurements) {
+    // iterate over the used IMUs
+    for (int i = 0; i < measurements.accelerometers_size(); i++) {
+      const AccelerometerMeasurement& accel_data = measurements.accelerometers(i);
+      const GyroMeasurement& gyro_data = measurements.gyros(i);
+
+      auto imu_msg = sensor_msgs::msg::Imu();
+      imu_msg.header.stamp = rclcpp::Time(measurements.time());
+      //todo
+      //imu_msg.header.frame_id = self.imu_frame;
+      //todo the following data needs to be scaled correctly
+      imu_msg.linear_acceleration.x = accel_data.value().x();
+      imu_msg.linear_acceleration.y = accel_data.value().y();
+      imu_msg.linear_acceleration.z = accel_data.value().z();
+      imu_msg.angular_velocity.x = gyro_data.value().x();
+      imu_msg.angular_velocity.y = gyro_data.value().y();
+      imu_msg.angular_velocity.z = gyro_data.value().z();
+      // we can not get the orientation from the simulation, still make sure
+      // that there is at least a valid quaternion in the message
+      imu_msg.orientation.w = 1;
+      imu_publishers_[i]->publish(imu_msg);
     }
-    sensor_publisher_->publish(jointmsg);
   }
 
   void command_callback(const sensor_msgs::msg::JointState::SharedPtr msg) const {
-
     ActuatorRequests request;
 
     for (unsigned int i = 0; i < msg->name.size(); i++) {
@@ -142,23 +183,27 @@ private:
       sensor->set_position(msg->position[i]);
     }
     client->sendRequest(request);
-    SensorMeasurements sensors = client->receive();
+    //todo why do we get meassurements here and ignore them?
+    SensorMeasurements measurements = client->receive();
   }
 
   rclcpp::TimerBase::SharedPtr timer_;
+  
   rclcpp::Publisher<rosgraph_msgs::msg::Clock>::SharedPtr clock_publisher_;
-  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr image_publisher_;
-  rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr sensor_publisher_;
-  rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr gyro_publisher_;
+  rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_state_publisher_;
+  std::vector<rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr> camera_image_publishers_;
+  std::vector<rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr> camera_info_publishers_;
+  std::vector<rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr> imu_publishers_;
+
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr motor_command_subscription_;
-  RobotClient *client;
-  std::string host_;
-  int port_;
+  
+  RobotClient *client;  
 };
 
 int main(int argc, char *argv[]) {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
   rclcpp::init(argc, argv);
+  //todo event publisher
   rclcpp::spin(std::make_shared<WebotsController>());
   rclcpp::shutdown();
   return 0;
