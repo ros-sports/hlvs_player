@@ -16,6 +16,8 @@
 #include <cmath>
 #include <stdexcept>
 
+#include <rclcpp/rclcpp.hpp>
+
 float RobotClient::history_period = 5;
 int RobotClient::max_answer_size = 1920 * 1080 * 3 + 1000;  // Adding some margin for other data than image
 int RobotClient::max_attempts = 20;
@@ -95,7 +97,10 @@ bool RobotClient::connectClient() {
   int attempt = 1;
   bool connected = false;
   while (attempt <= max_attempts) {
-    return_code = connect(socket_fd, (struct sockaddr *)&address, sizeof(struct sockaddr));
+    if (!rclcpp::ok()){      
+      exit(0);
+    }
+    return_code = connect(socket_fd, (struct sockaddr*)&address, sizeof(struct sockaddr));
     if (return_code == 0) {
       connected = true;
       break;

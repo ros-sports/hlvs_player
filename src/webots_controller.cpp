@@ -52,7 +52,7 @@ public:
     // Enable devices
     ActuatorRequests request;
     Json::Value devices;
-    std::ifstream json_file("src/ros_bridge/resources/devices.json");
+    std::ifstream json_file("resources/devices.json");
     json_file >> devices;
 
     // Cameras

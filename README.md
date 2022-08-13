@@ -25,7 +25,7 @@ Move to the repository:
 
 You can install the dependencies using:
 
-`rosdep install -i --from-path src --rosdistro foxy -y`
+`rosdep install -i --from-path src -y`
 
 build the package with this command:
 
