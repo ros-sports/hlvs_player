@@ -1,125 +1,133 @@
 {
-    "joint_state_topic_name" : "joint_states",
-    "joints" : [
+    "cameras": [
         {
-            "proto_proto_motor_name" : "Neck",
-            "proto_sensor_name" : "NeckS",
-            "time_step" : 8
-        },
-        {
-            "proto_motor_name" : "Head",
-            "proto_sensor_name" : "HeadS",
-            "time_step" : 8
-        },
-        {
-            "proto_motor_name" : "ShoulderL",
-            "proto_sensor_name" : "ShoulderLS",
-            "time_step" : 8
-        },
-        {
-            "proto_motor_name" : "ArmUpperL",
-            "proto_sensor_name" : "ArmUpperLS",
-            "time_step" : 8
-        },
-        {
-            "proto_motor_name" : "ArmLowerL",
-            "proto_sensor_name" : "ArmLowerLS",
-            "time_step" : 8
-        },
-        {
-            "proto_motor_name" : "PelvYL",
-            "proto_sensor_name" : "PelvYLS",
-            "time_step" : 8
-        },
-        {
-            "proto_motor_name" : "PelvL",
-            "proto_sensor_name" : "PelvLS",
-            "time_step" : 8
-        },
-        {
-            "proto_motor_name" : "LegUpperL",
-            "proto_sensor_name" : "LegUpperLS",
-            "time_step" : 8
-        },
-        {
-            "proto_motor_name" : "LegLowerL",
-            "proto_sensor_name" : "LegLowerLS",
-            "time_step" : 8
-        },
-        {
-            "proto_motor_name" : "AnkleL",
-            "proto_sensor_name" : "AnkleLS",
-            "time_step" : 8
-        },
-        {
-            "proto_motor_name" : "FootL",
-            "proto_sensor_name" : "FootLS",
-            "time_step" : 8
-        },
-        {
-            "proto_motor_name" : "PelvYR",
-            "proto_sensor_name" : "PelvYRS",
-            "time_step" : 8
-        },
-        {
-            "proto_motor_name" : "PelvR",
-            "proto_sensor_name" : "PelvRS",
-            "time_step" : 8
-        },
-        {
-            "proto_motor_name" : "LegUpperR",
-            "proto_sensor_name" : "LegUpperRS",
-            "time_step" : 8
-        },
-        {
-            "proto_motor_name" : "LegLowerR",
-            "proto_sensor_name" : "LegLowerRS",
-            "time_step" : 8
-        },
-        {
-            "proto_motor_name" : "AnkleR",
-            "proto_sensor_name" : "AnkleRS",
-            "time_step" : 8
-        },
-        {
-            "proto_motor_name" : "FootR",
-            "proto_sensor_name" : "FootRS",
-            "time_step" : 8
-        },
-        {
-            "proto_motor_name" : "ShoulderR",
-            "proto_sensor_name" : "ShoulderRS",
-            "time_step" : 8
-        },
-        {
-            "proto_motor_name" : "ArmUpperR",
-            "proto_sensor_name" : "ArmUpperRS",
-            "time_step" : 8
-        },
-        {
-            "proto_motor_name" : "ArmLowerR",
-            "proto_sensor_name" : "ArmLowerRS",
-            "time_step" : 8
+            "proto_camera_name": "Camera",
+            "time_step": 16,
+            "image_topic_name": "camera/image_proc",
+            "info_topic_name": "camera/camera_info",
+            "optical_frame": "camera_optical_frame",
+            "FOV": 1.0123,
+            "width": 320,
+            "height": 240
         }
     ],
-    "cameras" : [
+    "IMUs": [
         {
-            "proto_camera_name" : "Camera",
-            "time_step" : 16,
-            "image_topic_name" : "camera/image_proc",
-            "info_topic_name" : "camera/camera_info",
-            "optical_frame" : "camera_optical_frame",
-            "FOV" : 1.0123,
-            "width" : 320,
-            "height" : 240
+            "time_step": 8,
+            "proto_gyro_name": "Gyro",
+            "proto_accel_name": "Accelerometer",
+            "topic_name": "imu/data_raw",
+            "frame_name": "imu_frame"
         }
     ],
-    "IMUs" : [
+    "bumpers": [],
+    "force_sensors_1d": [],
+    "force_sensors_3d": [],
+    "force_sensors_6d": [],
+    "joint_state_topic_name": "joint_states",
+    "joint_command_topic_name": "joint_commands",
+    "joints": [
         {
-            "time_step" : 8,
-            "proto_gyro_name" : "Gyro",                            
-            "proto_accel_name" : "Accelerometer",
-            "topic_name": "imu/data_raw"
+            "proto_proto_motor_name": "Neck",
+            "proto_sensor_name": "NeckS",
+            // optionally specify a name that should be used for the ROS messages
+            //"ros_name" : "neck",
+            "time_step": 8
+        },
+        {
+            "proto_motor_name": "Head",
+            "proto_sensor_name": "HeadS",
+            "time_step": 8
+        },
+        {
+            "proto_motor_name": "ShoulderL",
+            "proto_sensor_name": "ShoulderLS",
+            "time_step": 8
+        },
+        {
+            "proto_motor_name": "ArmUpperL",
+            "proto_sensor_name": "ArmUpperLS",
+            "time_step": 8
+        },
+        {
+            "proto_motor_name": "ArmLowerL",
+            "proto_sensor_name": "ArmLowerLS",
+            "time_step": 8
+        },
+        {
+            "proto_motor_name": "PelvYL",
+            "proto_sensor_name": "PelvYLS",
+            "time_step": 8
+        },
+        {
+            "proto_motor_name": "PelvL",
+            "proto_sensor_name": "PelvLS",
+            "time_step": 8
+        },
+        {
+            "proto_motor_name": "LegUpperL",
+            "proto_sensor_name": "LegUpperLS",
+            "time_step": 8
+        },
+        {
+            "proto_motor_name": "LegLowerL",
+            "proto_sensor_name": "LegLowerLS",
+            "time_step": 8
+        },
+        {
+            "proto_motor_name": "AnkleL",
+            "proto_sensor_name": "AnkleLS",
+            "time_step": 8
+        },
+        {
+            "proto_motor_name": "FootL",
+            "proto_sensor_name": "FootLS",
+            "time_step": 8
+        },
+        {
+            "proto_motor_name": "PelvYR",
+            "proto_sensor_name": "PelvYRS",
+            "time_step": 8
+        },
+        {
+            "proto_motor_name": "PelvR",
+            "proto_sensor_name": "PelvRS",
+            "time_step": 8
+        },
+        {
+            "proto_motor_name": "LegUpperR",
+            "proto_sensor_name": "LegUpperRS",
+            "time_step": 8
+        },
+        {
+            "proto_motor_name": "LegLowerR",
+            "proto_sensor_name": "LegLowerRS",
+            "time_step": 8
+        },
+        {
+            "proto_motor_name": "AnkleR",
+            "proto_sensor_name": "AnkleRS",
+            "time_step": 8
+        },
+        {
+            "proto_motor_name": "FootR",
+            "proto_sensor_name": "FootRS",
+            "time_step": 8
+        },
+        {
+            "proto_motor_name": "ShoulderR",
+            "proto_sensor_name": "ShoulderRS",
+            "time_step": 8
+        },
+        {
+            "proto_motor_name": "ArmUpperR",
+            "proto_sensor_name": "ArmUpperRS",
+            "time_step": 8
+        },
+        {
+            "proto_motor_name": "ArmLowerR",
+            "proto_sensor_name": "ArmLowerRS",
+            "time_step": 8
         }
     ]
 }

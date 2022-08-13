@@ -8,7 +8,7 @@
 
 class RobotClient {
 public:
-  RobotClient(const std::string &host, int port, int verbosity = 3);
+  RobotClient(const std::string& host, int port, int verbosity = 3);
 
   /**
    * Close socket if opened and free all resources associated to the current connection
@@ -25,7 +25,7 @@ public:
    * Send the provided message to the simulator.
    * On failure, the client is closed and a runtime_error is thrown afterwards.
    */
-  void sendRequest(const ActuatorRequests &actuator_request);
+  void sendRequest(const ActuatorRequests& actuator_request);
 
   /**
    * Returns next sensor message received, or an empty pointer on failure. This call is blocking.
@@ -38,7 +38,7 @@ public:
    */
   bool isOk();
 
-  static ActuatorRequests buildRequestMessage(const std::string &path);
+  static ActuatorRequests buildRequestMessage(const std::string& path);
 
 private:
   /**
@@ -82,8 +82,8 @@ private:
   static float history_period;
 
   /**
-   * The maximal size of messages that can be received, if the announced size of a message is larger than this, the connection
-   * will be considered as out of sync and the connection will automatically be closed.
+   * The maximal size of messages that can be received, if the announced size of a message is larger than this, the
+   * connection will be considered as out of sync and the connection will automatically be closed.
    */
   static int max_answer_size;
 
@@ -101,10 +101,10 @@ private:
    * Throws logic_error if the connection has not been started.
    * In case an error occurs during reception, the connection is ended and a runtime_error is thrown
    */
-  void receiveData(char *buffer, int bytes);
+  void receiveData(char* buffer, int bytes);
 
   /**
    * Update the message history with a message
    */
-  void updateHistory(const SensorMeasurements &sensors);
+  void updateHistory(const SensorMeasurements& sensors);
 };
