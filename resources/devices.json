@@ -107,7 +107,11 @@
             "proto_camera_name" : "Camera",
             "time_step" : 16,
             "image_topic_name" : "camera/image_proc",
-            "info_topic_name" : "camera/camera_info"
+            "info_topic_name" : "camera/camera_info",
+            "optical_frame" : "camera_optical_frame",
+            "FOV" : 1.0123,
+            "width" : 320,
+            "height" : 240
         }
     ],
     "IMUs" : [
