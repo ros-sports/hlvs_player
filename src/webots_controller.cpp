@@ -37,6 +37,7 @@ public:
 
     // Publishers
     clock_publisher_ = this->create_publisher<rosgraph_msgs::msg::Clock>("clock", 10);
+    // todo use this instead? https://github.com/ros2/common_interfaces/blob/master/sensor_msgs/msg/TimeReference.msg
     real_clock_publisher_ = this->create_publisher<rosgraph_msgs::msg::Clock>("server_time_clock", 10);
     camera_image_publishers_ = {};
     camera_info_publishers_ = {};
@@ -47,7 +48,6 @@ public:
         devices["joint_command_topic_name"].asString(), 10, std::bind(&WebotsController::command_callback, this, _1));
 
     // Timer and its callback
-    // todo would it make sense to rather do this as a callback of /clock? We basically want to do this exactly once the
     // simulation does a step, it does not really make sense to run this in any other frequency
     timer_ = this->create_wall_timer(8ms, std::bind(&WebotsController::timer_callback, this));
 
