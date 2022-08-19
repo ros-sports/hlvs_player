@@ -35,13 +35,13 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(JSONCPP jsoncpp)
 include_directories(${JSONCPP_INCLUDE_DIRS})
 
-add_executable(webots_controller src/webots_controller.cpp src/robot_client.cpp ${ProtoSources} ${ProtoHeaders})
-target_include_directories(webots_controller PUBLIC
+add_executable(hlvs_player src/hlvs_player.cpp src/network_client.cpp ${ProtoSources} ${ProtoHeaders})
+target_include_directories(hlvs_player PUBLIC
 $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 $<INSTALL_INTERFACE:include>)
-ament_target_dependencies(webots_controller rclcpp std_msgs rosgraph_msgs cv_bridge image_transport Protobuf OpenCV JSONCPP)
+ament_target_dependencies(hlvs_player rclcpp std_msgs rosgraph_msgs cv_bridge image_transport Protobuf OpenCV JSONCPP)
 
-install(TARGETS webots_controller
+install(TARGETS hlvs_player
   EXPORT export_${PROJECT_NAME}
   DESTINATION lib/${PROJECT_NAME})
 
