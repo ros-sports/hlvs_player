@@ -17,7 +17,7 @@
 #include <sensor_msgs/msg/camera_info.hpp>
 #include <cv_bridge/cv_bridge.h>
 
-#include "ros_bridge/robot_client/robot_client.hpp"
+#include "hlvs_player/robot_client.hpp"
 
 using std::placeholders::_1;
 using namespace std::chrono_literals;

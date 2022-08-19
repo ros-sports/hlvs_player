@@ -1,16 +1,16 @@
 # v-hsc-ros-bridge
 
 ## Introduction
-This repository provides a ROS package named `ros_bridge` that can be used to communicate with the Webots server while using the Player/Client API.
+This repository provides a ROS package named `hlvs_player` that can be used to communicate with the Webots server while using the Player/Client API.
 
-It requests and receives sensor data (specified in the `src/ros_bridge/resources/devices.json`) over specific topics and subscribes to actuator command messages(only position control available at the moment). Node `webots_controller` is responsible for these operations.
+It requests and receives sensor data (specified in the `src/hlvs_player/resources/devices.json`) over specific topics and subscribes to actuator command messages(only position control available at the moment). Node `webots_controller` is responsible for these operations.
 
 This node is currently available only for ROS 2.
 
 ## Configuration
 The package comes with the default configuration for a Darwin-OP robot, but you can easily change it to your robot.
 The `ressources/devices.json` contains the definition of the devices (sensors and actuators).
-You can set the used network configuration and the ROS topic names via ROS parameters (see `launch/ros_bridge.launch`).
+You can set the used network configuration and the ROS topic names via ROS parameters (see `launch/hlvs_player.launch`).
 Remember to rebuild the package after changing the json file.
 
 ## Usage
@@ -43,8 +43,8 @@ In the root of the repository, source your overlay using:
 
 Run the node using one of these commands:
 
-`ros2 run ros_bridge webots_controller --ros-args -p host:="127.0.0.1" -p port:=10001`
-`ros2 launch ros_bridge ros_bridge.launch`
+`ros2 run hlvs_player webots_controller --ros-args -p host:="127.0.0.1" -p port:=10001`
+`ros2 launch hlvs_player hlvs_player.launch`
 
 (you can replace host and port with your preferred ones)
 

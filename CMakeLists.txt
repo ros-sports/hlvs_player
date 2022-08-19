@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(ros_bridge)
+project(hlvs_player)
 find_package(Protobuf REQUIRED)
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/misc/myprotobuf.cmake)
@@ -7,7 +7,7 @@ file(GLOB ProtoFiles "${CMAKE_CURRENT_SOURCE_DIR}/misc/*.proto")
 my_protobuf_generate_cpp(generated_files/myproject ProtoSources ProtoHeaders ${ProtoFiles})
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/generated_files/myproject)
 include_directories(${Protobuf_INCLUDE_DIRS})
-
+include_directories(include)
 # Default to C99
 if(NOT CMAKE_C_STANDARD)
   set(CMAKE_C_STANDARD 99)
@@ -34,11 +34,8 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(JSONCPP jsoncpp)
 include_directories(${JSONCPP_INCLUDE_DIRS})
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
 
-add_executable(webots_controller src/webots_controller.cpp src/robot_client/robot_client.cpp ${ProtoSources} ${ProtoHeaders})
+add_executable(webots_controller src/webots_controller.cpp src/robot_client.cpp ${ProtoSources} ${ProtoHeaders})
 target_include_directories(webots_controller PUBLIC
 $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 $<INSTALL_INTERFACE:include>)
@@ -52,8 +49,6 @@ install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
-  # the following line skips the linter which checks for copyrights
-  # uncomment the line when a copyright and license is not present in all source files
   #set(ament_cmake_copyright_FOUND TRUE)
   # the following line skips cpplint (only works in a git repo)
   # uncomment the line when this package is not in a git repo

@@ -1,5 +1,5 @@
 <launch>
-  <node pkg="ros_bridge" exec="webots_controller" output="screen">
+  <node pkg="hlvs_player" exec="webots_controller" output="screen">
     <param name="host" value="127.0.0.1"/>
     <param name="port" value="10001"/>    
   </node>

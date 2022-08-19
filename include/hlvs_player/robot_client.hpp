@@ -1,10 +1,28 @@
+#ifdef _WIN32
+#include <winsock.h>
+#define sleep(x) Sleep(x)
+#else
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
+#endif
+
 #include <deque>
 #include <memory>
+#include <cmath>
+#include <stdexcept>
 
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/text_format.h>
 #include "messages.pb.h"
+
 #include <opencv2/highgui.hpp>
+
+#include <rclcpp/rclcpp.hpp>
 
 class RobotClient {
 public:

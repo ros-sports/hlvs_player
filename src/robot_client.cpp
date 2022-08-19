@@ -1,22 +1,5 @@
-#include "ros_bridge/robot_client/robot_client.hpp"
+#include "hlvs_player/robot_client.hpp"
 
-#ifdef _WIN32
-#include <winsock.h>
-#define sleep(x) Sleep(x)
-#else
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <unistd.h>
-#endif
-
-#include <cmath>
-#include <stdexcept>
-
-#include <rclcpp/rclcpp.hpp>
 
 float RobotClient::history_period = 5;
 int RobotClient::max_answer_size = 1920 * 1080 * 3 + 1000;  // Adding some margin for other data than image
