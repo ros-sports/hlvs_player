@@ -149,6 +149,18 @@ public:
           this->create_publisher<geometry_msgs::msg::WrenchStamped>(devices["force_sensors_3d"][i]["topic_name"].asString(), 10));
     }
 
+    // Force sensors 6d
+    for (unsigned int i = 0; i < devices["force_sensors_6d"].size(); i++)
+    {
+      std::string frame_name = devices["force_sensors_6d"][i]["frame_name"].asString();
+      force6d_frame_names_.push_back(frame_name);
+      SensorTimeStep *force6d_sensor = request.add_sensor_time_steps();
+      force6d_sensor->set_name(devices["force_sensors_6d"][i]["proto_sensor_name"].asString());
+      force6d_sensor->set_timestep(devices["force_sensors_6d"][i]["time_step"].asDouble());
+      force6d_publishers_.push_back(
+          this->create_publisher<geometry_msgs::msg::WrenchStamped>(devices["force_sensors_6d"][i]["topic_name"].asString(), 10));
+    }
+
     // Cameras
     for (unsigned int i = 0; i < devices["cameras"].size(); i++)
     {
@@ -328,7 +340,7 @@ private:
     {
       auto wrench = geometry_msgs::msg::WrenchStamped();
       wrench.header.stamp = rclcpp::Time(measurements.time());
-      wrench.header.frame_id = force3d_frame_names_[i];      
+      wrench.header.frame_id = force3d_frame_names_[i];
       wrench.wrench.force.x = measurements.force3ds(i).value().x();
       wrench.wrench.force.y = measurements.force3ds(i).value().y();
       wrench.wrench.force.z = measurements.force3ds(i).value().z();
@@ -338,10 +350,18 @@ private:
 
   void publishForce6d(const SensorMeasurements &measurements)
   {
-    // todo wrenchstamped define frame_id in json
     for (int i = 0; i < measurements.force6ds_size(); i++)
     {
-      RCLCPP_WARN_STREAM(this->get_logger(), "force 6d sensors not implemented yet");
+      auto wrench = geometry_msgs::msg::WrenchStamped();
+      wrench.header.stamp = rclcpp::Time(measurements.time());
+      wrench.header.frame_id = force6d_frame_names_[i];
+      wrench.wrench.force.x = measurements.force6ds(i).force().x();
+      wrench.wrench.force.y = measurements.force6ds(i).force().y();
+      wrench.wrench.force.z = measurements.force6ds(i).force().z();
+      wrench.wrench.torque.x = measurements.force6ds(i).torque().x();
+      wrench.wrench.torque.y = measurements.force6ds(i).torque().y();
+      wrench.wrench.torque.z = measurements.force6ds(i).torque().z();
+      force6d_publishers_[i]->publish(wrench);
     }
   }
 
@@ -462,6 +482,7 @@ private:
   std::vector<rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>::SharedPtr> bumper_publishers_;
   std::vector<rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>::SharedPtr> force1d_publishers_;
   std::vector<rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>::SharedPtr> force3d_publishers_;
+  std::vector<rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>::SharedPtr> force6d_publishers_;
   std::vector<rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr> camera_image_publishers_;
   std::vector<rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr> camera_info_publishers_;
   std::vector<rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr> imu_publishers_;
@@ -475,6 +496,7 @@ private:
   std::vector<std::string> force1d_frame_names_;
   std::vector<std::string> force1d_frame_axis_;
   std::vector<std::string> force3d_frame_names_;
+  std::vector<std::string> force6d_frame_names_;
   std::vector<std::string> camera_frame_names_;
   std::vector<std::string> imu_frame_names_;
   RobotClient *client_;
