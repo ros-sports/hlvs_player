@@ -1,4 +1,16 @@
-{
+{    
+    "bumpers": [
+        {
+            "proto_bumper_name": "bumper1",
+            "time_step": 8,
+            "frame_name": "bumper1_frame",
+            "frame_axis": "x",
+            "topic_name": "bumper1/data"
+        }
+    ],
+    "force_sensors_1d": [],
+    "force_sensors_3d": [],
+    "force_sensors_6d": [],
     "cameras": [
         {
             "proto_camera_name": "Camera",
@@ -13,17 +25,13 @@
     ],
     "IMUs": [
         {
-            "time_step": 8,
             "proto_gyro_name": "Gyro",
             "proto_accel_name": "Accelerometer",
+            "time_step": 8,            
             "topic_name": "imu/data_raw",
             "frame_name": "imu_frame"
         }
     ],
-    "bumpers": [],
-    "force_sensors_1d": [],
-    "force_sensors_3d": [],
-    "force_sensors_6d": [],
     "joint_state_topic_name": "joint_states",
     "joint_command_topic_name": "joint_commands",
     "joints": [

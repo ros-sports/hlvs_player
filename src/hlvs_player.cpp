@@ -9,6 +9,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/time.hpp>
+#include <geometry_msgs/msg/wrench_stamped.hpp>
 #include <std_msgs/msg/string.hpp>
 #include <rosgraph_msgs/msg/clock.hpp>
 #include <sensor_msgs/msg/image.hpp>
@@ -89,6 +90,29 @@ public:
     }
     joint_state_publisher_ =
         this->create_publisher<sensor_msgs::msg::JointState>(devices["joint_state_topic_name"].asString(), 10);
+
+    // Bumpers
+    for (unsigned int i = 0; i < devices["bumpers"].size(); i++)
+    {
+      std::string frame_name = devices["bumpers"][i]["frame_name"].asString();
+      bumper_frame_names_.push_back(frame_name);
+      std::string frame_axis = devices["bumpers"][i]["frame_axis"].asString();
+      if (frame_axis == "x" || frame_axis == "y" || frame_axis == "z")
+      {
+        bumper_frame_axis_.push_back(frame_axis);
+      }
+      else
+      {
+        bumper_frame_axis_.push_back("x");
+        RCLCPP_WARN_STREAM(this->get_logger(), "Bumper frame axis for frame " << frame_name << " not correctly specified. Must be 'x', 'y', or 'z'.");
+      }
+
+      SensorTimeStep *bumper_sensor = request.add_sensor_time_steps();
+      bumper_sensor->set_name(devices["bumpers"][i]["proto_bumper_name"].asString());
+      bumper_sensor->set_timestep(devices["bumpers"][i]["time_step"].asDouble());
+      bumper_publishers_.push_back(
+          this->create_publisher<geometry_msgs::msg::WrenchStamped>(devices["bumpers"][i]["topic_name"].asString(), 10));
+    }
 
     // Cameras
     for (unsigned int i = 0; i < devices["cameras"].size(); i++)
@@ -201,11 +225,36 @@ private:
   }
 
   void publishBumpers(const SensorMeasurements &measurements)
-  {
-    // todo wrenchstamped + definition in devices json which dimension define frame_id in json
+  { // todo we should always check the names rather than relying on the numbering as this could maybe differ if not all have the same timestep??
     for (int i = 0; i < measurements.bumpers_size(); i++)
     {
-      RCLCPP_WARN_STREAM(this->get_logger(), "bumpers not implemented yet");
+      auto wrench = geometry_msgs::msg::WrenchStamped();
+      wrench.header.stamp = rclcpp::Time(measurements.time());
+      wrench.header.frame_id = bumper_frame_names_[i];
+      bool bumper_active = measurements.bumpers(i).value();
+      // we encode the binary bumper force as 1N as this can then be displayed in RViz
+      float force;
+      if (bumper_active){
+        force = 1;
+      }else{
+        force = 0;
+      }
+
+      // set the force for the specified axis
+      if (bumper_frame_axis_[i] == "x")
+      {
+        wrench.wrench.force.x = force;
+      }
+      else if (bumper_frame_axis_[i] == "y")
+      {
+        wrench.wrench.force.y = force;
+      }
+      else
+      {
+        wrench.wrench.force.z = force;
+      }
+
+      bumper_publishers_[i]->publish(wrench);
     }
   }
 
@@ -350,6 +399,7 @@ private:
   rclcpp::Publisher<rosgraph_msgs::msg::Clock>::SharedPtr clock_publisher_;
   rclcpp::Publisher<sensor_msgs::msg::TimeReference>::SharedPtr real_clock_publisher_;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_state_publisher_;
+  std::vector<rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>::SharedPtr> bumper_publishers_;
   std::vector<rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr> camera_image_publishers_;
   std::vector<rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr> camera_info_publishers_;
   std::vector<rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr> imu_publishers_;
@@ -358,6 +408,8 @@ private:
 
   std::map<std::string, std::string> map_proto_to_ros_;
   std::map<std::string, std::string> map_ros_to_proto_;
+  std::vector<std::string> bumper_frame_names_;
+  std::vector<std::string> bumper_frame_axis_;
   std::vector<std::string> camera_frame_names_;
   std::vector<std::string> imu_frame_names_;
   RobotClient *client_;
