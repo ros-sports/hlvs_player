@@ -22,9 +22,11 @@
 using std::placeholders::_1;
 using namespace std::chrono_literals;
 
-class WebotsController : public rclcpp::Node {
+class WebotsController : public rclcpp::Node
+{
 public:
-  WebotsController() : Node("hlvs_player") {
+  WebotsController() : Node("hlvs_player")
+  {
     // Parameters
     this->declare_parameter<std::string>("host", "127.0.0.1");
     this->declare_parameter<int>("port", 10001);
@@ -57,14 +59,15 @@ public:
     int port;
     this->get_parameter("host", host);
     this->get_parameter("port", port);
-    client = new RobotClient(host, port, 3, this->get_logger());
-    client->connectClient();
+    client_ = new RobotClient(host, port, 3, this->get_logger());
+    client_->connectClient();
 
     // Joints
-    map_proto_to_ros = {};
-    map_ros_to_proto = {};
-    for (unsigned int i = 0; i < devices["joints"].size(); i++) {
-      SensorTimeStep* sensor = request.add_sensor_time_steps();
+    map_proto_to_ros_ = {};
+    map_ros_to_proto_ = {};
+    for (unsigned int i = 0; i < devices["joints"].size(); i++)
+    {
+      SensorTimeStep *sensor = request.add_sensor_time_steps();
       std::string sensor_name = devices["joints"][i]["proto_sensor_name"].asString();
       std::string motor_name = devices["joints"][i]["proto_motor_name"].asString();
       sensor->set_name(sensor_name);
@@ -72,23 +75,27 @@ public:
       std::string ros_name = devices["joints"][i]["ros_name"].asString();
       // we might need to change the name between the proto and ros (e.g. because there is a [shoulder] in the joint
       // name of the proto)
-      if (ros_name != "") {
-        map_proto_to_ros.insert({sensor_name, ros_name});
-        map_ros_to_proto.insert({ros_name, motor_name});
-      } else {
+      if (ros_name != "")
+      {
+        map_proto_to_ros_.insert({sensor_name, ros_name});
+        map_ros_to_proto_.insert({ros_name, motor_name});
+      }
+      else
+      {
         // no change necessary
-        map_proto_to_ros.insert({sensor_name, sensor_name});
-        map_ros_to_proto.insert({motor_name, motor_name});
+        map_proto_to_ros_.insert({sensor_name, sensor_name});
+        map_ros_to_proto_.insert({motor_name, motor_name});
       }
     }
     joint_state_publisher_ =
         this->create_publisher<sensor_msgs::msg::JointState>(devices["joint_state_topic_name"].asString(), 10);
 
     // Cameras
-    for (unsigned int i = 0; i < devices["cameras"].size(); i++) {
+    for (unsigned int i = 0; i < devices["cameras"].size(); i++)
+    {
       std::string frame_name = devices["cameras"][i]["optical_frame"].asString();
       camera_frame_names_.push_back(frame_name);
-      SensorTimeStep* camera_sensor = request.add_sensor_time_steps();
+      SensorTimeStep *camera_sensor = request.add_sensor_time_steps();
       camera_sensor->set_name(devices["cameras"][i]["proto_camera_name"].asString());
       camera_sensor->set_timestep(devices["cameras"][i]["time_step"].asDouble());
       camera_image_publishers_.push_back(
@@ -116,10 +123,11 @@ public:
 
     // IMUs
     imu_frame_names_ = {};
-    for (unsigned int i = 0; i < devices["IMUs"].size(); i++) {
+    for (unsigned int i = 0; i < devices["IMUs"].size(); i++)
+    {
       imu_frame_names_.push_back(devices["IMUs"][i]["frame_name"].asString());
       // gyro
-      SensorTimeStep* sensor = request.add_sensor_time_steps();
+      SensorTimeStep *sensor = request.add_sensor_time_steps();
       sensor->set_name(devices["IMUs"][i]["proto_gyro_name"].asString());
       sensor->set_timestep(devices["IMUs"][i]["time_step"].asDouble());
       // accel
@@ -130,17 +138,20 @@ public:
           this->create_publisher<sensor_msgs::msg::Imu>(devices["IMUs"][i]["topic_name"].asString(), 10));
     }
 
-    client->sendRequest(request);
-    SensorMeasurements measurements = client->receive();
+    client_->sendRequest(request);
+    SensorMeasurements measurements = client_->receive();
   }
 
 private:
-  void timer_callback() {
-    if (client->isOk()) {
-      try {
+  void timer_callback()
+  {
+    if (client_->isOk())
+    {
+      try
+      {
         ActuatorRequests request;
-        client->sendRequest(request);
-        SensorMeasurements measurements = client->receive();
+        client_->sendRequest(request);
+        SensorMeasurements measurements = client_->receive();
 
         // publish simulation time
         auto clk = rosgraph_msgs::msg::Clock();
@@ -158,62 +169,82 @@ private:
         publishImage(measurements);
         publishIMUs(measurements);
         publishJointStates(measurements);
-      } catch (const std::runtime_error& exc) {
+      }
+      catch (const std::runtime_error &exc)
+      {
         std::cerr << "Runtime error: " << exc.what() << std::endl;
       }
     }
   }
 
-  void handle_messages(const SensorMeasurements& measurements) {
-    for (int i = 0; i < measurements.messages_size(); i++) {
+  void handle_messages(const SensorMeasurements &measurements)
+  {
+    for (int i = 0; i < measurements.messages_size(); i++)
+    {
       std::string text = measurements.messages(i).text();
-      if (measurements.messages(i).message_type() == Message::ERROR_MESSAGE) {
+      if (measurements.messages(i).message_type() == Message::ERROR_MESSAGE)
+      {
         RCLCPP_ERROR_STREAM(this->get_logger(), "RECEIVED ERROR: " << text);
-      } else if (measurements.messages(i).message_type() == Message::WARNING_MESSAGE) {
+      }
+      else if (measurements.messages(i).message_type() == Message::WARNING_MESSAGE)
+      {
         RCLCPP_ERROR_STREAM(this->get_logger(), "RECEIVED WARNING: " << text);
-      } else {
+      }
+      else
+      {
         RCLCPP_ERROR_STREAM(this->get_logger(), "RECEIVED UNKNOWN MESSAGE: " << text);
       }
     }
   }
 
-  void publishBumpers(const SensorMeasurements& measurements) {
+  void publishBumpers(const SensorMeasurements &measurements)
+  {
     // todo wrenchstamped + definition in devices json which dimension define frame_id in json
-    for (int i = 0; i < measurements.bumpers_size(); i++) {
+    for (int i = 0; i < measurements.bumpers_size(); i++)
+    {
       RCLCPP_WARN_STREAM(this->get_logger(), "bumpers not implemented yet");
     }
   }
 
-  void publishForce1d(const SensorMeasurements& measurements) {
+  void publishForce1d(const SensorMeasurements &measurements)
+  {
     // todo wrenchstamped + definition in devices json which dimension define frame_id in json
-    for (int i = 0; i < measurements.forces_size(); i++) {
+    for (int i = 0; i < measurements.forces_size(); i++)
+    {
       RCLCPP_WARN_STREAM(this->get_logger(), "force 1d sensors not implemented yet");
     }
   }
 
-  void publishForce3d(const SensorMeasurements& measurements) {
+  void publishForce3d(const SensorMeasurements &measurements)
+  {
     // todo wrenchstamped + definition in devices json which dimension define frame_id in json
-    for (int i = 0; i < measurements.force3ds_size(); i++) {
+    for (int i = 0; i < measurements.force3ds_size(); i++)
+    {
       RCLCPP_WARN_STREAM(this->get_logger(), "force 3d sensors not implemented yet");
     }
   }
 
-  void publishForce6d(const SensorMeasurements& measurements) {
+  void publishForce6d(const SensorMeasurements &measurements)
+  {
     // todo wrenchstamped define frame_id in json
-    for (int i = 0; i < measurements.force6ds_size(); i++) {
+    for (int i = 0; i < measurements.force6ds_size(); i++)
+    {
       RCLCPP_WARN_STREAM(this->get_logger(), "force 6d sensors not implemented yet");
     }
   }
 
-  void publishImage(const SensorMeasurements& measurements) {
+  void publishImage(const SensorMeasurements &measurements)
+  {
     // iterate over the used cameras
-    for (int i = 0; i < measurements.cameras_size(); i++) {
-      const CameraMeasurement& sensor_data = measurements.cameras(i);
-      if (sensor_data.quality() != -1) {
+    for (int i = 0; i < measurements.cameras_size(); i++)
+    {
+      const CameraMeasurement &sensor_data = measurements.cameras(i);
+      if (sensor_data.quality() != -1)
+      {
         throw std::runtime_error("Encoded images are not supported in this client");
       }
 
-      cv::Mat img(sensor_data.height(), sensor_data.width(), CV_8UC3, (void*)sensor_data.image().c_str());
+      cv::Mat img(sensor_data.height(), sensor_data.width(), CV_8UC3, (void *)sensor_data.image().c_str());
 
       auto imgmsg = sensor_msgs::msg::Image();
       cv_bridge::CvImage img_bridge;
@@ -225,11 +256,13 @@ private:
     }
   }
 
-  void publishIMUs(const SensorMeasurements& measurements) {
+  void publishIMUs(const SensorMeasurements &measurements)
+  {
     // iterate over the used IMUs
-    for (int i = 0; i < measurements.accelerometers_size(); i++) {
-      const AccelerometerMeasurement& accel_data = measurements.accelerometers(i);
-      const GyroMeasurement& gyro_data = measurements.gyros(i);
+    for (int i = 0; i < measurements.accelerometers_size(); i++)
+    {
+      const AccelerometerMeasurement &accel_data = measurements.accelerometers(i);
+      const GyroMeasurement &gyro_data = measurements.gyros(i);
 
       auto imu_msg = sensor_msgs::msg::Imu();
       imu_msg.header.stamp = rclcpp::Time(measurements.time());
@@ -247,10 +280,12 @@ private:
     }
   }
 
-  void publishJointStates(const SensorMeasurements& measurements) {
+  void publishJointStates(const SensorMeasurements &measurements)
+  {
     auto jointmsg = sensor_msgs::msg::JointState();
-    for (int i = 0; i < measurements.position_sensors_size(); i++) {
-      std::string ros_name = map_proto_to_ros[measurements.position_sensors(i).name()];
+    for (int i = 0; i < measurements.position_sensors_size(); i++)
+    {
+      std::string ros_name = map_proto_to_ros_[measurements.position_sensors(i).name()];
       jointmsg.name.push_back(ros_name);
       jointmsg.position.push_back(measurements.position_sensors(i).value());
       // todo velocity?
@@ -260,42 +295,51 @@ private:
     joint_state_publisher_->publish(jointmsg);
   }
 
-  void command_callback(const sensor_msgs::msg::JointState::SharedPtr msg) {
+  void command_callback(const sensor_msgs::msg::JointState::SharedPtr msg)
+  {
     ActuatorRequests request;
 
-    for (unsigned int i = 0; i < msg->name.size(); i++) {
+    for (unsigned int i = 0; i < msg->name.size(); i++)
+    {
       std::string name = msg->name[i].c_str();
-      if (!map_ros_to_proto.count(name)) {
+      if (!map_ros_to_proto_.count(name))
+      {
         RCLCPP_ERROR_STREAM(this->get_logger(), "Got joint command with unknown joint " << name.c_str());
         continue;
       }
-      std::string proto_name = map_ros_to_proto[name];
-      if (msg->position.size() == 0) {
+      std::string proto_name = map_ros_to_proto_[name];
+      if (msg->position.size() == 0)
+      {
         // no positions give, will use torque control
-        MotorTorque* motor_torque = request.add_motor_torques();
+        MotorTorque *motor_torque = request.add_motor_torques();
         motor_torque->set_name(proto_name);
         motor_torque->set_torque(msg->effort[i]);
-      } else {
+      }
+      else
+      {
         // use position and velocity
-        MotorPosition* motor_position = request.add_motor_positions();
+        MotorPosition *motor_position = request.add_motor_positions();
         motor_position->set_name(proto_name);
         motor_position->set_position(msg->position[i]);
-        if (msg->velocity.size() != 0) {
+        if (msg->velocity.size() != 0)
+        {
           // if additional velocity is give, use it as maximal speed
-          MotorVelocity* motor_velocity = request.add_motor_velocities();
+          MotorVelocity *motor_velocity = request.add_motor_velocities();
           motor_velocity->set_name(proto_name);
           motor_velocity->set_velocity(msg->velocity[i]);
         }
       }
     }
     // todo check if it could lead to errors due to the paralelism, maybe we need some kind of lock
-    client->sendRequest(request);
+    client_->sendRequest(request);
   }
 
-  double mat_from_fov_and_resolution(double fov, double res) {
+  double mat_from_fov_and_resolution(double fov, double res)
+  {
     return 0.5 * res * (cos((fov / 2)) / sin((fov / 2)));
   }
-  double h_fov_to_v_fov(double h_fov, int height, int width) {
+  double h_fov_to_v_fov(double h_fov, int height, int width)
+  {
     return 2 * atan(tan(h_fov * 0.5) * (height / width));
   }
   rclcpp::TimerBase::SharedPtr timer_;
@@ -309,14 +353,15 @@ private:
 
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr motor_command_subscription_;
 
-  std::map<std::string, std::string> map_proto_to_ros;
-  std::map<std::string, std::string> map_ros_to_proto;
+  std::map<std::string, std::string> map_proto_to_ros_;
+  std::map<std::string, std::string> map_ros_to_proto_;
   std::vector<std::string> camera_frame_names_;
   std::vector<std::string> imu_frame_names_;
-  RobotClient* client;
+  RobotClient *client_;
 };
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[])
+{
   GOOGLE_PROTOBUF_VERIFY_VERSION;
   rclcpp::init(argc, argv);
   auto node = std::make_shared<WebotsController>();

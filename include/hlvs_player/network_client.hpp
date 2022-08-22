@@ -63,17 +63,17 @@ private:
   /**
    * Host address
    */
-  std::string host;
+  std::string host_;
 
   /**
    * The destination port to establish connection
    */
-  int port;
+  int port_;
 
   /**
    * The file descriptor for the socket: -1 if connection is not established
    */
-  int socket_fd;
+  int socket_fd_;
 
   /**
    * 0: Silent mode, no error messages, even when the connection breaks
@@ -82,39 +82,39 @@ private:
    * 3: Print statistics over messages received
    * 4: Print all messages received
    */
-  int verbosity;
+  int verbosity_;
 
   struct MessageProperty {
     uint32_t simulated_time;  // [ms]
     uint64_t real_time;       // [ms]
     uint32_t msg_size;        // number of bytes in the message
   };
-  std::deque<MessageProperty> msg_history;
+  std::deque<MessageProperty> msg_history_;
 
-  uint64_t history_total_size;
-  uint64_t client_start;
-  uint64_t last_history_print;
+  uint64_t history_total_size_;
+  uint64_t client_start_;
+  uint64_t last_history_print_;
 
   /**
    * The period (in seconds) used to estimated bandwidth and real_time factor.
    */
-  static float history_period;
+  static float history_period_;
 
   /**
    * The maximal size of messages that can be received, if the announced size of a message is larger than this, the
    * connection will be considered as out of sync and the connection will automatically be closed.
    */
-  static int max_answer_size;
+  static int max_answer_size_;
 
   /**
    * The number of connection attempts before giving up
    */
-  static int max_attempts;
+  static int max_attempts_;
 
   /**
    * The number of seconds to wait between two connection attempts
    */
-  static int wait_time_sec;
+  static int wait_time_sec_;
 
 
   rclcpp::Logger logger_;
