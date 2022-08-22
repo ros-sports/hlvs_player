@@ -137,6 +137,18 @@ public:
           this->create_publisher<geometry_msgs::msg::WrenchStamped>(devices["force_sensors_1d"][i]["topic_name"].asString(), 10));
     }
 
+    // Force sensors 3d
+    for (unsigned int i = 0; i < devices["force_sensors_3d"].size(); i++)
+    {
+      std::string frame_name = devices["force_sensors_3d"][i]["frame_name"].asString();
+      force3d_frame_names_.push_back(frame_name);
+      SensorTimeStep *force3d_sensor = request.add_sensor_time_steps();
+      force3d_sensor->set_name(devices["force_sensors_3d"][i]["proto_sensor_name"].asString());
+      force3d_sensor->set_timestep(devices["force_sensors_3d"][i]["time_step"].asDouble());
+      force3d_publishers_.push_back(
+          this->create_publisher<geometry_msgs::msg::WrenchStamped>(devices["force_sensors_3d"][i]["topic_name"].asString(), 10));
+    }
+
     // Cameras
     for (unsigned int i = 0; i < devices["cameras"].size(); i++)
     {
@@ -257,9 +269,12 @@ private:
       bool bumper_active = measurements.bumpers(i).value();
       // we encode the binary bumper force as 1N as this can then be displayed in RViz
       float force;
-      if (bumper_active){
+      if (bumper_active)
+      {
         force = 1;
-      }else{
+      }
+      else
+      {
         force = 0;
       }
 
@@ -287,8 +302,8 @@ private:
     {
       auto wrench = geometry_msgs::msg::WrenchStamped();
       wrench.header.stamp = rclcpp::Time(measurements.time());
-      wrench.header.frame_id = force1d_frame_names_[i];      
-      float force =  measurements.forces(i).value();      
+      wrench.header.frame_id = force1d_frame_names_[i];
+      float force = measurements.forces(i).value();
 
       // set the force for the specified axis
       if (force1d_frame_axis_[i] == "x")
@@ -309,10 +324,15 @@ private:
 
   void publishForce3d(const SensorMeasurements &measurements)
   {
-    // todo wrenchstamped + definition in devices json which dimension define frame_id in json
     for (int i = 0; i < measurements.force3ds_size(); i++)
     {
-      RCLCPP_WARN_STREAM(this->get_logger(), "force 3d sensors not implemented yet");
+      auto wrench = geometry_msgs::msg::WrenchStamped();
+      wrench.header.stamp = rclcpp::Time(measurements.time());
+      wrench.header.frame_id = force3d_frame_names_[i];      
+      wrench.wrench.force.x = measurements.force3ds(i).value().x();
+      wrench.wrench.force.y = measurements.force3ds(i).value().y();
+      wrench.wrench.force.z = measurements.force3ds(i).value().z();
+      force3d_publishers_[i]->publish(wrench);
     }
   }
 
@@ -441,6 +461,7 @@ private:
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_state_publisher_;
   std::vector<rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>::SharedPtr> bumper_publishers_;
   std::vector<rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>::SharedPtr> force1d_publishers_;
+  std::vector<rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>::SharedPtr> force3d_publishers_;
   std::vector<rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr> camera_image_publishers_;
   std::vector<rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr> camera_info_publishers_;
   std::vector<rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr> imu_publishers_;
@@ -453,6 +474,7 @@ private:
   std::vector<std::string> bumper_frame_axis_;
   std::vector<std::string> force1d_frame_names_;
   std::vector<std::string> force1d_frame_axis_;
+  std::vector<std::string> force3d_frame_names_;
   std::vector<std::string> camera_frame_names_;
   std::vector<std::string> imu_frame_names_;
   RobotClient *client_;
