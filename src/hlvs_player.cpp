@@ -114,6 +114,29 @@ public:
           this->create_publisher<geometry_msgs::msg::WrenchStamped>(devices["bumpers"][i]["topic_name"].asString(), 10));
     }
 
+    // Force sensors 1d
+    for (unsigned int i = 0; i < devices["force_sensors_1d"].size(); i++)
+    {
+      std::string frame_name = devices["force_sensors_1d"][i]["frame_name"].asString();
+      force1d_frame_names_.push_back(frame_name);
+      std::string frame_axis = devices["force_sensors_1d"][i]["frame_axis"].asString();
+      if (frame_axis == "x" || frame_axis == "y" || frame_axis == "z")
+      {
+        force1d_frame_axis_.push_back(frame_axis);
+      }
+      else
+      {
+        force1d_frame_axis_.push_back("x");
+        RCLCPP_WARN_STREAM(this->get_logger(), "Force1d sensor frame axis for frame " << frame_name << " not correctly specified. Must be 'x', 'y', or 'z'.");
+      }
+
+      SensorTimeStep *force1d_sensor = request.add_sensor_time_steps();
+      force1d_sensor->set_name(devices["force_sensors_1d"][i]["proto_sensor_name"].asString());
+      force1d_sensor->set_timestep(devices["force_sensors_1d"][i]["time_step"].asDouble());
+      force1d_publishers_.push_back(
+          this->create_publisher<geometry_msgs::msg::WrenchStamped>(devices["force_sensors_1d"][i]["topic_name"].asString(), 10));
+    }
+
     // Cameras
     for (unsigned int i = 0; i < devices["cameras"].size(); i++)
     {
@@ -253,7 +276,6 @@ private:
       {
         wrench.wrench.force.z = force;
       }
-
       bumper_publishers_[i]->publish(wrench);
     }
   }
@@ -263,7 +285,25 @@ private:
     // todo wrenchstamped + definition in devices json which dimension define frame_id in json
     for (int i = 0; i < measurements.forces_size(); i++)
     {
-      RCLCPP_WARN_STREAM(this->get_logger(), "force 1d sensors not implemented yet");
+      auto wrench = geometry_msgs::msg::WrenchStamped();
+      wrench.header.stamp = rclcpp::Time(measurements.time());
+      wrench.header.frame_id = force1d_frame_names_[i];      
+      float force =  measurements.forces(i).value();      
+
+      // set the force for the specified axis
+      if (force1d_frame_axis_[i] == "x")
+      {
+        wrench.wrench.force.x = force;
+      }
+      else if (force1d_frame_axis_[i] == "y")
+      {
+        wrench.wrench.force.y = force;
+      }
+      else
+      {
+        wrench.wrench.force.z = force;
+      }
+      force1d_publishers_[i]->publish(wrench);
     }
   }
 
@@ -400,6 +440,7 @@ private:
   rclcpp::Publisher<sensor_msgs::msg::TimeReference>::SharedPtr real_clock_publisher_;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_state_publisher_;
   std::vector<rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>::SharedPtr> bumper_publishers_;
+  std::vector<rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>::SharedPtr> force1d_publishers_;
   std::vector<rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr> camera_image_publishers_;
   std::vector<rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr> camera_info_publishers_;
   std::vector<rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr> imu_publishers_;
@@ -410,6 +451,8 @@ private:
   std::map<std::string, std::string> map_ros_to_proto_;
   std::vector<std::string> bumper_frame_names_;
   std::vector<std::string> bumper_frame_axis_;
+  std::vector<std::string> force1d_frame_names_;
+  std::vector<std::string> force1d_frame_axis_;
   std::vector<std::string> camera_frame_names_;
   std::vector<std::string> imu_frame_names_;
   RobotClient *client_;
