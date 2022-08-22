@@ -15,6 +15,7 @@
 #include <sensor_msgs/msg/joint_state.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/camera_info.hpp>
+#include <sensor_msgs/msg/time_reference.hpp>
 #include <cv_bridge/cv_bridge.h>
 
 #include "hlvs_player/network_client.hpp"
@@ -39,8 +40,7 @@ public:
 
     // Publishers
     clock_publisher_ = this->create_publisher<rosgraph_msgs::msg::Clock>("clock", 10);
-    // todo use this instead? https://github.com/ros2/common_interfaces/blob/master/sensor_msgs/msg/TimeReference.msg
-    real_clock_publisher_ = this->create_publisher<rosgraph_msgs::msg::Clock>("server_time_clock", 10);
+    real_clock_publisher_ = this->create_publisher<sensor_msgs::msg::TimeReference>("server_time_clock", 10);
     camera_image_publishers_ = {};
     camera_info_publishers_ = {};
     imu_publishers_ = {};
@@ -158,8 +158,11 @@ private:
         clk.clock = rclcpp::Time(measurements.time());
         clock_publisher_->publish(clk);
         // publish wall clock time of server
-        clk.clock = rclcpp::Time(measurements.real_time());
-        real_clock_publisher_->publish(clk);
+        auto ref_clk = sensor_msgs::msg::TimeReference();
+        ref_clk.header.stamp = rclcpp::Time(measurements.real_time());
+        ref_clk.time_ref = rclcpp::Time(measurements.time());
+        ref_clk.source = "server";
+        real_clock_publisher_->publish(ref_clk);
 
         handle_messages(measurements);
         publishBumpers(measurements);
@@ -345,7 +348,7 @@ private:
   rclcpp::TimerBase::SharedPtr timer_;
 
   rclcpp::Publisher<rosgraph_msgs::msg::Clock>::SharedPtr clock_publisher_;
-  rclcpp::Publisher<rosgraph_msgs::msg::Clock>::SharedPtr real_clock_publisher_;
+  rclcpp::Publisher<sensor_msgs::msg::TimeReference>::SharedPtr real_clock_publisher_;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_state_publisher_;
   std::vector<rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr> camera_image_publishers_;
   std::vector<rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr> camera_info_publishers_;
