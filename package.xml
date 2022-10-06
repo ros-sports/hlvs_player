@@ -14,6 +14,7 @@
   <depend>rclcpp</depend>
   <depend>std_msgs</depend>
   <depend>sensor_msgs</depend>
+  <depend>irobot_events_executor</depend>
 
   <depend>cv_bridge</depend>
 
