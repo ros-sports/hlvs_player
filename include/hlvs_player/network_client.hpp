@@ -25,9 +25,9 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/logger.hpp>
 
-class RobotClient {
+class NetworkClient {
 public:
-  RobotClient(const std::string& host, int port, int verbosity, rclcpp::Logger ros_logger);
+  NetworkClient(const std::string& host, int port, int verbosity, rclcpp::Logger ros_logger);
 
   /**
    * Close socket if opened and free all resources associated to the current connection
