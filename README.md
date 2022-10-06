@@ -1,4 +1,4 @@
-# v-hsc-ros-bridge
+# HLVS Player
 
 ## Introduction
 This repository provides a ROS package named `hlvs_player` that can be used to communicate with the Webots server while using the Player/Client API.
