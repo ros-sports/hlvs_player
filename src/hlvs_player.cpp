@@ -47,7 +47,6 @@ public:
     imu_publishers_ = {};
 
     // Subscriptions
-    // TODO change to JointCommand and move that msg to ros sports or somewhere senseful
     motor_command_subscription_ = this->create_subscription<sensor_msgs::msg::JointState>(
         devices["joint_command_topic_name"].asString(), 10, std::bind(&WebotsController::command_callback, this, _1));
 
@@ -60,7 +59,7 @@ public:
     int port;
     this->get_parameter("host", host);
     this->get_parameter("port", port);
-    client_ = new RobotClient(host, port, 3, this->get_logger());
+    client_ = new NetworkClient(host, port, 3, this->get_logger());
     client_->connectClient();
 
     // Joints
@@ -309,7 +308,6 @@ private:
 
   void publishForce1d(const SensorMeasurements &measurements)
   {
-    // todo wrenchstamped + definition in devices json which dimension define frame_id in json
     for (int i = 0; i < measurements.forces_size(); i++)
     {
       auto wrench = geometry_msgs::msg::WrenchStamped();
@@ -322,13 +320,29 @@ private:
       {
         wrench.wrench.force.x = force;
       }
+      else if (force1d_frame_axis_[i] == "-x")
+      {
+        wrench.wrench.force.x = -force;
+      }
       else if (force1d_frame_axis_[i] == "y")
       {
         wrench.wrench.force.y = force;
       }
-      else
+      else if (force1d_frame_axis_[i] == "-y")
+      {
+        wrench.wrench.force.y = -force;
+      }
+      else if (force1d_frame_axis_[i] == "z")
       {
         wrench.wrench.force.z = force;
+      }
+      else if (force1d_frame_axis_[i] == "-z")
+      {
+        wrench.wrench.force.z = -force;
+      }
+      else
+      {
+        RCLCPP_ERROR_STREAM(this->get_logger(), "DEFINITION OF FORCE SENSOR " << measurements.forces(i).name() << " WRONG");
       }
       force1d_publishers_[i]->publish(wrench);
     }
@@ -420,8 +434,6 @@ private:
       std::string ros_name = map_proto_to_ros_[measurements.position_sensors(i).name()];
       jointmsg.name.push_back(ros_name);
       jointmsg.position.push_back(measurements.position_sensors(i).value());
-      // todo velocity?
-      // todo effort?
     }
     jointmsg.header.stamp = rclcpp::Time(measurements.time());
     joint_state_publisher_->publish(jointmsg);
@@ -462,7 +474,6 @@ private:
         }
       }
     }
-    // todo check if it could lead to errors due to the paralelism, maybe we need some kind of lock
     client_->sendRequest(request);
   }
 
@@ -499,7 +510,7 @@ private:
   std::vector<std::string> force6d_frame_names_;
   std::vector<std::string> camera_frame_names_;
   std::vector<std::string> imu_frame_names_;
-  RobotClient *client_;
+  NetworkClient *client_;
 };
 
 int main(int argc, char *argv[])
