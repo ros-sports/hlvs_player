@@ -1,38 +1,4 @@
 {    
-    "bumpers": [
-        {
-            "proto_bumper_name": "bumper1",
-            "time_step": 8,
-            "frame_name": "bumper1_frame",
-            "frame_axis": "x",
-            "topic_name": "bumper1/data"
-        }
-    ],
-    "force_sensors_1d": [
-        {
-            "proto_sensor_name": "force_sensor1",
-            "time_step": 8,
-            "frame_name": "force_sensor1_frame",
-            "frame_axis": "x",
-            "topic_name": "force_sensor1/data"
-        }
-    ],
-    "force_sensors_3d": [
-        {
-            "proto_sensor_name": "force_sensor3",
-            "time_step": 8,
-            "frame_name": "force_sensor3_frame",
-            "topic_name": "force_sensor3/data"
-        }
-    ],
-    "force_sensors_6d": [
-        {
-            "proto_sensor_name": "force_sensor6",
-            "time_step": 8,
-            "frame_name": "force_sensor6_frame",
-            "topic_name": "force_sensor6/data"
-        }
-    ],
     "cameras": [
         {
             "proto_camera_name": "Camera",
