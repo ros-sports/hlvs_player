@@ -1,9 +1,9 @@
 #include "hlvs_player/network_client.hpp"
 
-float RobotClient::history_period_ = 5;
-int RobotClient::max_answer_size_ = 1920 * 1080 * 3 + 1000; // Adding some margin for other data than image
-int RobotClient::max_attempts_ = 20;
-int RobotClient::wait_time_sec_ = 1;
+float NetworkClient::history_period_ = 5;
+int NetworkClient::max_answer_size_ = 1920 * 1080 * 3 + 1000; // Adding some margin for other data than image
+int NetworkClient::max_attempts_ = 20;
+int NetworkClient::wait_time_sec_ = 1;
 
 static void close_socket(int fd)
 {
@@ -33,7 +33,7 @@ static char *read_file(const char *filename)
   return buffer;
 }
 
-void RobotClient::printMessages(const SensorMeasurements &sensor_measurements)
+void NetworkClient::printMessages(const SensorMeasurements &sensor_measurements)
 {
   for (int i = 0; i < sensor_measurements.messages_size(); i++)
   {
@@ -43,7 +43,7 @@ void RobotClient::printMessages(const SensorMeasurements &sensor_measurements)
   }
 }
 
-RobotClient::RobotClient(const std::string &host, int port, int verbosity, rclcpp::Logger ros_logger) : host_(host),
+NetworkClient::NetworkClient(const std::string &host, int port, int verbosity, rclcpp::Logger ros_logger) : host_(host),
                                                                                                         port_(port),
                                                                                                         socket_fd_(-1),
                                                                                                         verbosity_(verbosity),
@@ -52,7 +52,7 @@ RobotClient::RobotClient(const std::string &host, int port, int verbosity, rclcp
                                                                                                         last_history_print_(0),
                                                                                                         logger_(ros_logger) {}
 
-bool RobotClient::connectClient()
+bool NetworkClient::connectClient()
 {
   int return_code;
   struct hostent *server = gethostbyname(host_.c_str());
@@ -134,21 +134,21 @@ bool RobotClient::connectClient()
   return true;
 }
 
-void RobotClient::disconnectClient()
+void NetworkClient::disconnectClient()
 {
   if (socket_fd_ == -1 && verbosity_ > 0)
   {
-    fprintf(stderr, "RobotClient is already disconnected\n");
+    fprintf(stderr, "NetworkClient is already disconnected\n");
     return;
   }
   close_socket(socket_fd_);
   socket_fd_ = -1;
 }
 
-void RobotClient::sendRequest(const ActuatorRequests &actuator_request)
+void NetworkClient::sendRequest(const ActuatorRequests &actuator_request)
 {
   if (socket_fd_ == -1)
-    throw std::logic_error("RobotClient is not connected");
+    throw std::logic_error("NetworkClient is not connected");
   const uint32_t size = htonl(actuator_request.ByteSizeLong());
 #ifndef _WIN32
   // This doesn't work on Windows, we should implement SocketOutputStream to make it work efficiently on Windows
@@ -182,7 +182,7 @@ void RobotClient::sendRequest(const ActuatorRequests &actuator_request)
 #endif
 }
 
-SensorMeasurements RobotClient::receive()
+SensorMeasurements NetworkClient::receive()
 {
   uint32_t content_size_network;
   receiveData((char *)&content_size_network, sizeof(uint32_t));
@@ -211,12 +211,12 @@ SensorMeasurements RobotClient::receive()
   return sensor_measurements;
 }
 
-bool RobotClient::isOk()
+bool NetworkClient::isOk()
 {
   return socket_fd_ != -1;
 }
 
-ActuatorRequests RobotClient::buildRequestMessage(const std::string &path)
+ActuatorRequests NetworkClient::buildRequestMessage(const std::string &path)
 {
   const char *message = read_file(path.c_str());
   if (message == nullptr)
@@ -226,10 +226,10 @@ ActuatorRequests RobotClient::buildRequestMessage(const std::string &path)
   return actuator_request;
 }
 
-void RobotClient::receiveData(char *buffer, int bytes)
+void NetworkClient::receiveData(char *buffer, int bytes)
 {
   if (socket_fd_ == -1)
-    throw std::logic_error("RobotClient is not connected");
+    throw std::logic_error("NetworkClient is not connected");
   int received = 0;
   while (received < bytes)
   {
@@ -246,7 +246,7 @@ void RobotClient::receiveData(char *buffer, int bytes)
   }
 }
 
-void RobotClient::updateHistory(const SensorMeasurements &sensors)
+void NetworkClient::updateHistory(const SensorMeasurements &sensors)
 {
   uint32_t msg_size = sensors.ByteSizeLong();
   MessageProperty new_msg;
