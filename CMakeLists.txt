@@ -29,6 +29,7 @@ find_package(std_msgs REQUIRED)
 find_package(rosgraph_msgs REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(image_transport REQUIRED)
+find_package(irobot_events_executor REQUIRED)
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 find_package(PkgConfig REQUIRED)
@@ -39,7 +40,7 @@ add_executable(hlvs_player src/hlvs_player.cpp src/network_client.cpp ${ProtoSou
 target_include_directories(hlvs_player PUBLIC
 $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 $<INSTALL_INTERFACE:include>)
-ament_target_dependencies(hlvs_player rclcpp std_msgs rosgraph_msgs cv_bridge image_transport Protobuf OpenCV JSONCPP)
+ament_target_dependencies(hlvs_player rclcpp std_msgs rosgraph_msgs cv_bridge image_transport irobot_events_executor Protobuf OpenCV JSONCPP)
 
 install(TARGETS hlvs_player
   EXPORT export_${PROJECT_NAME}
