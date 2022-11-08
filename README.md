@@ -1,5 +1,7 @@
 # HLVS Player
 
+[![Build and Test (rolling)](https://github.com/ros-sports/hlvs_player/actions/workflows/build_and_test_rolling.yaml/badge.svg?branch=main)](https://github.com/ros-sports/hlvs_player/actions/workflows/build_and_test_rolling.yaml?query=branch:main)
+
 ## Introduction
 This repository provides a ROS package named `hlvs_player` that can be used to communicate with the Webots server while using the Player/Client API.
 
