@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef HLVS_PLAYER__NETWORK_CLIENT_HPP_
+#define HLVS_PLAYER__NETWORK_CLIENT_HPP_
+
 #ifdef _WIN32
 #include <winsock.h>
 #define sleep(x) Sleep(x)
@@ -25,13 +28,15 @@
 #include <unistd.h>
 #endif
 
+#include <google/protobuf/io/zero_copy_stream_impl.h>
+#include <google/protobuf/text_format.h>
+
 #include <deque>
 #include <memory>
 #include <cmath>
 #include <stdexcept>
+#include <string>
 
-#include <google/protobuf/io/zero_copy_stream_impl.h>
-#include <google/protobuf/text_format.h>
 #include "messages.pb.h"
 
 #include <opencv2/highgui.hpp>
@@ -39,9 +44,10 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/logger.hpp>
 
-class NetworkClient {
+class NetworkClient
+{
 public:
-  NetworkClient(const std::string& host, int port, int verbosity, rclcpp::Logger ros_logger);
+  NetworkClient(const std::string & host, int port, int verbosity, rclcpp::Logger ros_logger);
 
   /**
    * Close socket if opened and free all resources associated to the current connection
@@ -58,7 +64,7 @@ public:
    * Send the provided message to the simulator.
    * On failure, the client is closed and a runtime_error is thrown afterwards.
    */
-  void sendRequest(const ActuatorRequests& actuator_request);
+  void sendRequest(const ActuatorRequests & actuator_request);
 
   /**
    * Returns next sensor message received, or an empty pointer on failure. This call is blocking.
@@ -71,7 +77,7 @@ public:
    */
   bool isOk();
 
-  static ActuatorRequests buildRequestMessage(const std::string& path);
+  static ActuatorRequests buildRequestMessage(const std::string & path);
 
 private:
   /**
@@ -98,7 +104,8 @@ private:
    */
   int verbosity_;
 
-  struct MessageProperty {
+  struct MessageProperty
+  {
     uint32_t simulated_time;  // [ms]
     uint64_t real_time;       // [ms]
     uint32_t msg_size;        // number of bytes in the message
@@ -137,12 +144,14 @@ private:
    * Throws logic_error if the connection has not been started.
    * In case an error occurs during reception, the connection is ended and a runtime_error is thrown
    */
-  void receiveData(char* buffer, int bytes);
+  void receiveData(char * buffer, int bytes);
 
   /**
    * Update the message history with a message
    */
-  void updateHistory(const SensorMeasurements& sensors);
+  void updateHistory(const SensorMeasurements & sensors);
 
-  void printMessages(const SensorMeasurements &sensor_measurements);
+  void printMessages(const SensorMeasurements & sensor_measurements);
 };
+
+#endif  // HLVS_PLAYER__NETWORK_CLIENT_HPP_
