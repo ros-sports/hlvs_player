@@ -5,9 +5,9 @@
   <version>0.1.0</version>
   <description>A simple ROS 2 bridge for RoboCup Humanoid</description>
   <maintainer email="marc.bestmann@posteo.de">Marc Bestmann</maintainer>
+  <license>Apache License 2.0</license>
   <author email="marc.bestmann@posteo.de">Marc Bestmann</author>
   <author email="soheilkhatibi1377@gmail.com">Soheil Khatibi</author>
-  <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
