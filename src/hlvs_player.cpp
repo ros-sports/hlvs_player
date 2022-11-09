@@ -382,7 +382,7 @@ private:
       }
 
       cv::Mat img(sensor_data.height(), sensor_data.width(), CV_8UC3,
-        (void *)sensor_data.image().c_str());
+        const_cast<void *>(reinterpret_cast<const void *>(sensor_data.image().c_str())));
 
       auto imgmsg = sensor_msgs::msg::Image();
       cv_bridge::CvImage img_bridge;

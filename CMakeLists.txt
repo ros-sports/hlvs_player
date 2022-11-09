@@ -5,7 +5,7 @@ find_package(Protobuf REQUIRED)
 include(${CMAKE_CURRENT_SOURCE_DIR}/misc/myprotobuf.cmake)
 file(GLOB ProtoFiles "${CMAKE_CURRENT_SOURCE_DIR}/misc/*.proto")
 my_protobuf_generate_cpp(generated_files/myproject ProtoSources ProtoHeaders ${ProtoFiles})
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/generated_files/myproject)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/generated_files)
 include_directories(${Protobuf_INCLUDE_DIRS})
 include_directories(include)
 # Default to C99

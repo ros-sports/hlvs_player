@@ -37,9 +37,9 @@ static char * read_file(const char * filename)
     return NULL;
   }
   if (fseek(fp, 0L, SEEK_END) == 0) {
-    const long size = ftell(fp);
+    const int size = ftell(fp);
     assert(size != -1);
-    buffer = (char *)malloc(sizeof(char) * (size + 1));
+    buffer = reinterpret_cast<char *>(malloc(sizeof(char) * (size + 1)));
     fseek(fp, 0L, SEEK_SET);
     const size_t len = fread(buffer, sizeof(char), size, fp);
     buffer[len] = '\0';
@@ -78,7 +78,9 @@ bool NetworkClient::connectClient()
   address.sin_family = AF_INET;
   address.sin_port = htons(port_);
   if (server) {
-    memcpy((char *)&address.sin_addr.s_addr, (char *)server->h_addr, server->h_length);
+    memcpy(
+      reinterpret_cast<char *>(&address.sin_addr.s_addr),
+      reinterpret_cast<char *>(server->h_addr), server->h_length);
   } else {
     fprintf(stderr, "Cannot resolve server name: %s\n", host_.c_str());
     return false;
@@ -171,7 +173,10 @@ void NetworkClient::sendRequest(const ActuatorRequests & actuator_request)
   // This doesn't work on Windows, we should implement SocketOutputStream to make it work
   // efficiently on Windows.
   // See https://stackoverflow.com/questions/23280457/c-google-protocol-buffers-open-http-socket
-  if (send(socket_fd_, (char *)(&size), sizeof(uint32_t), 0) == -1) {
+  if (send(
+      socket_fd_,
+      const_cast<char *>(reinterpret_cast<const char *>(&size)), sizeof(uint32_t), 0) == -1)
+  {
     std::string error_msg = "Failed to send message of size: " + std::to_string(size) + " errno: " +
       std::to_string(errno);
     if (errno == ECONNRESET) {
@@ -185,8 +190,8 @@ void NetworkClient::sendRequest(const ActuatorRequests & actuator_request)
   actuator_request.SerializeToZeroCopyStream(zeroCopyStream);
   delete zeroCopyStream;
 #else  // here we make a useless malloc, copy and free
-  char * output = (char *)malloc(sizeof(int) + size);
-  uint32_t * content_size = (uint32_t *)output;
+  char * output = reinterpret_cast<char *>(malloc(sizeof(int) + size));
+  uint32_t * content_size = reinterpret_cast<uint32_t *>(output);
   *content_size = size;
   uint32_t total_size = sizeof(uint32_t) + *content_size;
   actuator_request.SerializeToArray(&output[sizeof(uint32_t)], *content_size);
@@ -205,7 +210,7 @@ void NetworkClient::sendRequest(const ActuatorRequests & actuator_request)
 SensorMeasurements NetworkClient::receive()
 {
   uint32_t content_size_network;
-  receiveData((char *)&content_size_network, sizeof(uint32_t));
+  receiveData(reinterpret_cast<char *>(&content_size_network), sizeof(uint32_t));
   const int answer_size = ntohl(content_size_network);
   if (answer_size > max_answer_size_ || answer_size == 0) {
     disconnectClient();
@@ -214,7 +219,7 @@ SensorMeasurements NetworkClient::receive()
               answer_size) + " (probably out of sync)");
   }
   SensorMeasurements sensor_measurements;
-  char * buffer = (char *)malloc(answer_size);
+  char * buffer = reinterpret_cast<char *>(malloc(answer_size));
   receiveData(buffer, answer_size);
   sensor_measurements.ParseFromArray(buffer, answer_size);
   free(buffer);

@@ -37,7 +37,7 @@
 #include <stdexcept>
 #include <string>
 
-#include "messages.pb.h"
+#include "myproject/messages.pb.h"
 
 #include <opencv2/highgui.hpp>
 
