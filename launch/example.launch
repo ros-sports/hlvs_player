@@ -1,6 +1,7 @@
 <launch>
   <node pkg="hlvs_player" exec="hlvs_player" output="screen">
     <param name="host" value="127.0.0.1"/>
-    <param name="port" value="10001"/>    
+    <param name="port" value="10001"/>
+    <param name="devices_file" value="$(find-pkg-share hlvs_player)/config/devices.json"/>
   </node>
 </launch>
