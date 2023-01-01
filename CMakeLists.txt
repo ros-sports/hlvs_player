@@ -5,7 +5,7 @@ find_package(Protobuf REQUIRED)
 include(${CMAKE_CURRENT_SOURCE_DIR}/misc/myprotobuf.cmake)
 file(GLOB ProtoFiles "${CMAKE_CURRENT_SOURCE_DIR}/misc/*.proto")
 my_protobuf_generate_cpp(generated_files/myproject ProtoSources ProtoHeaders ${ProtoFiles})
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/generated_files/myproject)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/generated_files)
 include_directories(${Protobuf_INCLUDE_DIRS})
 include_directories(include)
 # Default to C99
@@ -40,7 +40,16 @@ add_executable(hlvs_player src/hlvs_player.cpp src/network_client.cpp ${ProtoSou
 target_include_directories(hlvs_player PUBLIC
 $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 $<INSTALL_INTERFACE:include>)
-ament_target_dependencies(hlvs_player rclcpp std_msgs rosgraph_msgs cv_bridge image_transport irobot_events_executor Protobuf OpenCV JSONCPP)
+ament_target_dependencies(hlvs_player
+  rclcpp
+  std_msgs
+  rosgraph_msgs
+  cv_bridge
+  image_transport
+  irobot_events_executor
+  Protobuf
+  OpenCV
+  JSONCPP)
 
 install(TARGETS hlvs_player
   EXPORT export_${PROJECT_NAME}

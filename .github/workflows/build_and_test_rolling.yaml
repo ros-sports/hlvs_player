@@ -26,6 +26,7 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
+      - uses: actions/checkout@v2
       - uses: ros-tooling/setup-ros@v0.3
         with:
           use-ros2-testing: true
@@ -35,3 +36,4 @@ jobs:
           # Specify package name, so tests only run on the packages in this repo even
           # if we have other packages in the workspace.
           package-name: hlvs_player
+          vcs-repo-file-url: dependencies.repos
