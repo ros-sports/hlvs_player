@@ -4,9 +4,7 @@
             "proto_camera_name": "Camera",
             "time_step": 16,
             "optical_frame": "camera_optical_frame",
-            "FOV": 1.0123,
-            "width": 320,
-            "height": 240
+            "horizontal_field_of_view": 1.04
         }
     ],
     "IMUs": [
