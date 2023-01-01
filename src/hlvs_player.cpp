@@ -33,11 +33,19 @@ public:
     // Parameters
     this->declare_parameter<std::string>("host", "127.0.0.1");
     this->declare_parameter<int>("port", 10001);
+    this->declare_parameter<std::string>("devices_file", "resources/devices.json");
 
     // Enable devices
     ActuatorRequests request;
     Json::Value devices;
-    std::ifstream json_file("resources/devices.json");
+    std::ifstream json_file(this->get_parameter("devices_file").as_string());
+
+    // Check if file exists
+    if (!json_file.is_open())
+    {
+      RCLCPP_ERROR(this->get_logger(), "Could not open devices file. Please check the 'devices_file' parameter.");
+      return;
+    }
     json_file >> devices;
 
     // Publishers
