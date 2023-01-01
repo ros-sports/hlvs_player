@@ -57,7 +57,7 @@ public:
 
     // Subscriptions
     motor_command_subscription_ = this->create_subscription<sensor_msgs::msg::JointState>(
-        devices["joint_command_topic_name"].asString(), 10, std::bind(&WebotsController::command_callback, this, _1));
+        "joint_command", 10, std::bind(&WebotsController::command_callback, this, _1));
 
     // Timer and its callback
     // simulation does a step, it does not really make sense to run this in any other frequency
@@ -239,12 +239,12 @@ private:
 
         // publish simulation time
         auto clk = rosgraph_msgs::msg::Clock();
-        clk.clock = rclcpp::Time(measurements.time());
+        clk.clock = ms_to_ros_time(measurements.time());
         clock_publisher_->publish(clk);
         // publish wall clock time of server
         auto ref_clk = sensor_msgs::msg::TimeReference();
-        ref_clk.header.stamp = rclcpp::Time(measurements.real_time());
-        ref_clk.time_ref = rclcpp::Time(measurements.time());
+        ref_clk.header.stamp = ms_to_ros_time(measurements.real_time());
+        ref_clk.time_ref = ms_to_ros_time(measurements.time());
         ref_clk.source = "server";
         real_clock_publisher_->publish(ref_clk);
 
@@ -289,7 +289,7 @@ private:
     for (int i = 0; i < measurements.bumpers_size(); i++)
     {
       auto wrench = geometry_msgs::msg::WrenchStamped();
-      wrench.header.stamp = rclcpp::Time(measurements.time());
+      wrench.header.stamp = ms_to_ros_time(measurements.time());
       wrench.header.frame_id = bumper_frame_names_[i];
       bool bumper_active = measurements.bumpers(i).value();
       // we encode the binary bumper force as 1N as this can then be displayed in RViz
@@ -325,7 +325,7 @@ private:
     for (int i = 0; i < measurements.forces_size(); i++)
     {
       auto wrench = geometry_msgs::msg::WrenchStamped();
-      wrench.header.stamp = rclcpp::Time(measurements.time());
+      wrench.header.stamp = ms_to_ros_time(measurements.time());
       wrench.header.frame_id = force1d_frame_names_[i];
       float force = measurements.forces(i).value();
 
@@ -367,7 +367,7 @@ private:
     for (int i = 0; i < measurements.force3ds_size(); i++)
     {
       auto wrench = geometry_msgs::msg::WrenchStamped();
-      wrench.header.stamp = rclcpp::Time(measurements.time());
+      wrench.header.stamp = ms_to_ros_time(measurements.time());
       wrench.header.frame_id = force3d_frame_names_[i];
       wrench.wrench.force.x = measurements.force3ds(i).value().x();
       wrench.wrench.force.y = measurements.force3ds(i).value().y();
@@ -381,7 +381,7 @@ private:
     for (int i = 0; i < measurements.force6ds_size(); i++)
     {
       auto wrench = geometry_msgs::msg::WrenchStamped();
-      wrench.header.stamp = rclcpp::Time(measurements.time());
+      wrench.header.stamp = ms_to_ros_time(measurements.time());
       wrench.header.frame_id = force6d_frame_names_[i];
       wrench.wrench.force.x = measurements.force6ds(i).force().x();
       wrench.wrench.force.y = measurements.force6ds(i).force().y();
@@ -410,7 +410,7 @@ private:
       cv_bridge::CvImage img_bridge;
       img_bridge = cv_bridge::CvImage(std_msgs::msg::Header(), sensor_msgs::image_encodings::BGR8, img);
       img_bridge.toImageMsg(imgmsg);
-      imgmsg.header.stamp = rclcpp::Time(measurements.time());
+      imgmsg.header.stamp = ms_to_ros_time(measurements.time());
       imgmsg.header.frame_id = camera_frame_names_[i];
       camera_image_publishers_[i]->publish(imgmsg);
     }
@@ -425,7 +425,7 @@ private:
       const GyroMeasurement &gyro_data = measurements.gyros(i);
 
       auto imu_msg = sensor_msgs::msg::Imu();
-      imu_msg.header.stamp = rclcpp::Time(measurements.time());
+      imu_msg.header.stamp = ms_to_ros_time(measurements.time());
       imu_msg.header.frame_id = imu_frame_names_[i];
       imu_msg.linear_acceleration.x = accel_data.value().x();
       imu_msg.linear_acceleration.y = accel_data.value().y();
@@ -449,7 +449,7 @@ private:
       jointmsg.name.push_back(ros_name);
       jointmsg.position.push_back(measurements.position_sensors(i).value());
     }
-    jointmsg.header.stamp = rclcpp::Time(measurements.time());
+    jointmsg.header.stamp = ms_to_ros_time(measurements.time());
     joint_state_publisher_->publish(jointmsg);
   }
 
@@ -499,6 +499,12 @@ private:
   {
     return 2 * atan(tan(h_fov * 0.5) * (height / width));
   }
+
+  rclcpp::Time ms_to_ros_time(u_int32_t ms)
+  {
+    return rclcpp::Time(ms / 1000, (ms % 1000) * 1000000);
+  }
+
   rclcpp::TimerBase::SharedPtr timer_;
 
   rclcpp::Publisher<rosgraph_msgs::msg::Clock>::SharedPtr clock_publisher_;
