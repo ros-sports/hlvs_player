@@ -88,8 +88,7 @@ public:
         map_ros_to_proto_.insert({motor_name, motor_name});
       }
     }
-    joint_state_publisher_ =
-        this->create_publisher<sensor_msgs::msg::JointState>(devices["joint_state_topic_name"].asString(), 10);
+    joint_state_publisher_ = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 10);
 
     // Bumpers
     for (unsigned int i = 0; i < devices["bumpers"].size(); i++)
@@ -111,7 +110,8 @@ public:
       bumper_sensor->set_name(devices["bumpers"][i]["proto_bumper_name"].asString());
       bumper_sensor->set_timestep(devices["bumpers"][i]["time_step"].asDouble());
       bumper_publishers_.push_back(
-          this->create_publisher<geometry_msgs::msg::WrenchStamped>(devices["bumpers"][i]["topic_name"].asString(), 10));
+          this->create_publisher<geometry_msgs::msg::WrenchStamped>(
+            devices["bumpers"][i]["proto_bumper_name"].asString() + "/data", 10));
     }
 
     // Force sensors 1d
@@ -134,7 +134,8 @@ public:
       force1d_sensor->set_name(devices["force_sensors_1d"][i]["proto_sensor_name"].asString());
       force1d_sensor->set_timestep(devices["force_sensors_1d"][i]["time_step"].asDouble());
       force1d_publishers_.push_back(
-          this->create_publisher<geometry_msgs::msg::WrenchStamped>(devices["force_sensors_1d"][i]["topic_name"].asString(), 10));
+          this->create_publisher<geometry_msgs::msg::WrenchStamped>(
+            devices["force_sensors_1d"][i]["proto_sensor_name"].asString() + "/data", 10));
     }
 
     // Force sensors 3d
@@ -146,7 +147,8 @@ public:
       force3d_sensor->set_name(devices["force_sensors_3d"][i]["proto_sensor_name"].asString());
       force3d_sensor->set_timestep(devices["force_sensors_3d"][i]["time_step"].asDouble());
       force3d_publishers_.push_back(
-          this->create_publisher<geometry_msgs::msg::WrenchStamped>(devices["force_sensors_3d"][i]["topic_name"].asString(), 10));
+          this->create_publisher<geometry_msgs::msg::WrenchStamped>(
+            devices["force_sensors_3d"][i]["proto_sensor_name"].asString() + "/data" , 10));
     }
 
     // Force sensors 6d
@@ -158,7 +160,8 @@ public:
       force6d_sensor->set_name(devices["force_sensors_6d"][i]["proto_sensor_name"].asString());
       force6d_sensor->set_timestep(devices["force_sensors_6d"][i]["time_step"].asDouble());
       force6d_publishers_.push_back(
-          this->create_publisher<geometry_msgs::msg::WrenchStamped>(devices["force_sensors_6d"][i]["topic_name"].asString(), 10));
+          this->create_publisher<geometry_msgs::msg::WrenchStamped>(
+            devices["force_sensors_6d"][i]["proto_sensor_name"].asString() + "/data", 10));
     }
 
     // Cameras
@@ -170,13 +173,14 @@ public:
       camera_sensor->set_name(devices["cameras"][i]["proto_camera_name"].asString());
       camera_sensor->set_timestep(devices["cameras"][i]["time_step"].asDouble());
       camera_image_publishers_.push_back(
-          this->create_publisher<sensor_msgs::msg::Image>(devices["cameras"][i]["image_topic_name"].asString(), 10));
+          this->create_publisher<sensor_msgs::msg::Image>(
+            devices["cameras"][i]["proto_camera_name"].asString() + "/image_raw", 10));
 
       // camera info should be latched and only published once
       rclcpp::QoS qos(rclcpp::KeepLast(1));
       qos.transient_local().reliable();
       camera_info_publishers_.push_back(this->create_publisher<sensor_msgs::msg::CameraInfo>(
-          devices["cameras"][i]["info_topic_name"].asString(), qos));
+          devices["cameras"][i]["proto_camera_name"].asString() + "/camera_info", qos));
       // calculate and publish the camera info
       sensor_msgs::msg::CameraInfo camera_info_msg = sensor_msgs::msg::CameraInfo();
       camera_info_msg.header.frame_id = frame_name;
@@ -206,7 +210,8 @@ public:
       sensor->set_name(devices["IMUs"][i]["proto_accel_name"].asString());
       sensor->set_timestep(devices["IMUs"][i]["time_step"].asDouble());
       imu_publishers_.push_back(
-          this->create_publisher<sensor_msgs::msg::Imu>(devices["IMUs"][i]["topic_name"].asString(), 10));
+          this->create_publisher<sensor_msgs::msg::Imu>(
+            devices["IMUs"][i]["proto_gyro_name"].asString() + "/data", 10));
     }
 
     client_->sendRequest(request);
