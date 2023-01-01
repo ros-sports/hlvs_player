@@ -203,7 +203,7 @@ public:
       sensor->set_timestep(devices["IMUs"][i]["time_step"].asDouble());
       imu_publishers_.push_back(
           this->create_publisher<sensor_msgs::msg::Imu>(
-            devices["IMUs"][i]["proto_gyro_name"].asString() + "/data", 10));
+            devices["IMUs"][i]["ros_name"].asString() + "/data", 10));
     }
 
     client_->sendRequest(request);

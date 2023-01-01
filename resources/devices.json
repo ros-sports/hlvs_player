@@ -9,8 +9,7 @@
     ],
     "IMUs": [
         {
-            "proto_gyro_name": "Gyro",
-            "proto_accel_name": "Accelerometer",
+            "ros_name": "imu",
             "time_step": 8,
             "frame_name": "imu_frame"
         }
