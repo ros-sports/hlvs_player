@@ -183,25 +183,9 @@ public:
       camera_image_publishers_.push_back(
           this->create_publisher<sensor_msgs::msg::Image>(
             devices["cameras"][i]["proto_camera_name"].asString() + "/image_raw", 10));
-
-      // camera info should be latched and only published once
-      rclcpp::QoS qos(rclcpp::KeepLast(1));
-      qos.transient_local().reliable();
       camera_info_publishers_.push_back(this->create_publisher<sensor_msgs::msg::CameraInfo>(
-          devices["cameras"][i]["proto_camera_name"].asString() + "/camera_info", qos));
-      // calculate and publish the camera info
-      sensor_msgs::msg::CameraInfo camera_info_msg = sensor_msgs::msg::CameraInfo();
-      camera_info_msg.header.frame_id = frame_name;
-      int height = devices["cameras"][i]["height"].asInt();
-      int width = devices["cameras"][i]["width"].asInt();
-      double FOV = devices["cameras"][i]["FOV"].asDouble();
-      camera_info_msg.height = height;
-      camera_info_msg.width = width;
-      double f_y = mat_from_fov_and_resolution(h_fov_to_v_fov(FOV, height, width), height);
-      double f_x = mat_from_fov_and_resolution(FOV, width);
-      camera_info_msg.k = {f_x, 0.0, width / 2.0, 0.0, f_y, height / 2.0, 0.0, 0.0, 1.0};
-      camera_info_msg.p = {f_x, 0.0, width / 2.0, 0.0, 0.0, f_y, height / 2.0, 0.0, 0.0, 0.0, 1.0, 0.0};
-      camera_info_publishers_[i]->publish(camera_info_msg);
+          devices["cameras"][i]["proto_camera_name"].asString() + "/camera_info", 10));
+      camera_fovs_.push_back(devices["cameras"][i]["horizontal_field_of_view"].asDouble());
     }
 
     // IMUs
@@ -413,6 +397,19 @@ private:
       imgmsg.header.stamp = ms_to_ros_time(measurements.time());
       imgmsg.header.frame_id = camera_frame_names_[i];
       camera_image_publishers_[i]->publish(imgmsg);
+
+      // calculate and publish the camera info
+      sensor_msgs::msg::CameraInfo camera_info_msg = sensor_msgs::msg::CameraInfo();
+      camera_info_msg.header = imgmsg.header;
+      int height = sensor_data.height();
+      int width = sensor_data.width();
+      camera_info_msg.height = height;
+      camera_info_msg.width = width;
+      double f_y = mat_from_fov_and_resolution(h_fov_to_v_fov(camera_fovs_[i], height, width), height);
+      double f_x = mat_from_fov_and_resolution(camera_fovs_[i], width);
+      camera_info_msg.k = {f_x, 0.0, width / 2.0, 0.0, f_y, height / 2.0, 0.0, 0.0, 1.0};
+      camera_info_msg.p = {f_x, 0.0, width / 2.0, 0.0, 0.0, f_y, height / 2.0, 0.0, 0.0, 0.0, 1.0, 0.0};
+      camera_info_publishers_[i]->publish(camera_info_msg);
     }
   }
 
@@ -530,6 +527,7 @@ private:
   std::vector<std::string> force6d_frame_names_;
   std::vector<std::string> camera_frame_names_;
   std::vector<std::string> imu_frame_names_;
+  std::vector<double> camera_fovs_;
   NetworkClient *client_;
 };
 
