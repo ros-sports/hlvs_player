@@ -46,7 +46,7 @@ In the root of the repository, source your overlay using:
 Run the node using one of these commands:
 
 `ros2 run hlvs_player hlvs_player --ros-args -p host:="127.0.0.1" -p port:=10001`
-`ros2 launch hlvs_player hlvs_player.launch`
+`ros2 launch hlvs_player example.launch`
 
 (you can replace host and port with your preferred ones)
 
