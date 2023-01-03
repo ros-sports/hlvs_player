@@ -57,9 +57,10 @@ public:
     std::ifstream json_file(this->get_parameter("devices_file").as_string());
 
     // Check if file exists
-    if (!json_file.is_open())
-    {
-      RCLCPP_ERROR(this->get_logger(), "Could not open devices file. Please check the 'devices_file' parameter.");
+    if (!json_file.is_open()) {
+      RCLCPP_ERROR(
+        this->get_logger(),
+        "Could not open devices file. Please check the 'devices_file' parameter.");
       return;
     }
     json_file >> devices;
@@ -74,7 +75,7 @@ public:
 
     // Subscriptions
     motor_command_subscription_ = this->create_subscription<sensor_msgs::msg::JointState>(
-        "joint_command", 10, std::bind(&WebotsController::command_callback, this, _1));
+      "joint_command", 10, std::bind(&WebotsController::command_callback, this, _1));
 
     // Timer and its callback
     // simulation does a step, it does not really make sense to run this in any other frequency
@@ -109,7 +110,8 @@ public:
         map_ros_to_proto_.insert({motor_name, motor_name});
       }
     }
-    joint_state_publisher_ = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 10);
+    joint_state_publisher_ = this->create_publisher<sensor_msgs::msg::JointState>(
+      "joint_states", 10);
 
     // Bumpers
     for (unsigned int i = 0; i < devices["bumpers"].size(); i++) {
@@ -130,8 +132,8 @@ public:
       bumper_sensor->set_name(devices["bumpers"][i]["proto_bumper_name"].asString());
       bumper_sensor->set_timestep(devices["bumpers"][i]["time_step"].asDouble());
       bumper_publishers_.push_back(
-          this->create_publisher<geometry_msgs::msg::WrenchStamped>(
-            devices["bumpers"][i]["proto_bumper_name"].asString() + "/data", 10));
+        this->create_publisher<geometry_msgs::msg::WrenchStamped>(
+          devices["bumpers"][i]["proto_bumper_name"].asString() + "/data", 10));
     }
 
     // Force sensors 1d
@@ -153,8 +155,8 @@ public:
       force1d_sensor->set_name(devices["force_sensors_1d"][i]["proto_sensor_name"].asString());
       force1d_sensor->set_timestep(devices["force_sensors_1d"][i]["time_step"].asDouble());
       force1d_publishers_.push_back(
-          this->create_publisher<geometry_msgs::msg::WrenchStamped>(
-            devices["force_sensors_1d"][i]["proto_sensor_name"].asString() + "/data", 10));
+        this->create_publisher<geometry_msgs::msg::WrenchStamped>(
+          devices["force_sensors_1d"][i]["proto_sensor_name"].asString() + "/data", 10));
     }
 
     // Force sensors 3d
@@ -165,8 +167,8 @@ public:
       force3d_sensor->set_name(devices["force_sensors_3d"][i]["proto_sensor_name"].asString());
       force3d_sensor->set_timestep(devices["force_sensors_3d"][i]["time_step"].asDouble());
       force3d_publishers_.push_back(
-          this->create_publisher<geometry_msgs::msg::WrenchStamped>(
-            devices["force_sensors_3d"][i]["proto_sensor_name"].asString() + "/data" , 10));
+        this->create_publisher<geometry_msgs::msg::WrenchStamped>(
+          devices["force_sensors_3d"][i]["proto_sensor_name"].asString() + "/data", 10));
     }
 
     // Force sensors 6d
@@ -177,8 +179,8 @@ public:
       force6d_sensor->set_name(devices["force_sensors_6d"][i]["proto_sensor_name"].asString());
       force6d_sensor->set_timestep(devices["force_sensors_6d"][i]["time_step"].asDouble());
       force6d_publishers_.push_back(
-          this->create_publisher<geometry_msgs::msg::WrenchStamped>(
-            devices["force_sensors_6d"][i]["proto_sensor_name"].asString() + "/data", 10));
+        this->create_publisher<geometry_msgs::msg::WrenchStamped>(
+          devices["force_sensors_6d"][i]["proto_sensor_name"].asString() + "/data", 10));
     }
 
     // Cameras
@@ -189,9 +191,10 @@ public:
       camera_sensor->set_name(devices["cameras"][i]["proto_camera_name"].asString());
       camera_sensor->set_timestep(devices["cameras"][i]["time_step"].asDouble());
       camera_image_publishers_.push_back(
-          this->create_publisher<sensor_msgs::msg::Image>(
-            devices["cameras"][i]["proto_camera_name"].asString() + "/image_raw", 10));
-      camera_info_publishers_.push_back(this->create_publisher<sensor_msgs::msg::CameraInfo>(
+        this->create_publisher<sensor_msgs::msg::Image>(
+          devices["cameras"][i]["proto_camera_name"].asString() + "/image_raw", 10));
+      camera_info_publishers_.push_back(
+        this->create_publisher<sensor_msgs::msg::CameraInfo>(
           devices["cameras"][i]["proto_camera_name"].asString() + "/camera_info", 10));
       camera_fovs_.push_back(devices["cameras"][i]["horizontal_field_of_view"].asDouble());
     }
@@ -209,8 +212,8 @@ public:
       sensor->set_name(devices["IMUs"][i]["proto_accel_name"].asString());
       sensor->set_timestep(devices["IMUs"][i]["time_step"].asDouble());
       imu_publishers_.push_back(
-          this->create_publisher<sensor_msgs::msg::Imu>(
-            devices["IMUs"][i]["ros_name"].asString() + "/data", 10));
+        this->create_publisher<sensor_msgs::msg::Imu>(
+          devices["IMUs"][i]["ros_name"].asString() + "/data", 10));
     }
 
     client_->sendRequest(request);
@@ -381,10 +384,17 @@ private:
       int width = sensor_data.width();
       camera_info_msg.height = height;
       camera_info_msg.width = width;
-      double f_y = mat_from_fov_and_resolution(h_fov_to_v_fov(camera_fovs_[i], height, width), height);
+      double f_y = mat_from_fov_and_resolution(
+        h_fov_to_v_fov(camera_fovs_[i], height, width), height);
       double f_x = mat_from_fov_and_resolution(camera_fovs_[i], width);
-      camera_info_msg.k = {f_x, 0.0, width / 2.0, 0.0, f_y, height / 2.0, 0.0, 0.0, 1.0};
-      camera_info_msg.p = {f_x, 0.0, width / 2.0, 0.0, 0.0, f_y, height / 2.0, 0.0, 0.0, 0.0, 1.0, 0.0};
+      camera_info_msg.k = {
+        f_x, 0.0, width / 2.0,
+        0.0, f_y, height / 2.0,
+        0.0, 0.0, 1.0};
+      camera_info_msg.p = {
+        f_x, 0.0, width / 2.0, 0.0,
+        0.0, f_y, height / 2.0, 0.0,
+        0.0, 0.0, 1.0, 0.0};
       camera_info_publishers_[i]->publish(camera_info_msg);
     }
   }
