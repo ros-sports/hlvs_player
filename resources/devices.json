@@ -1,27 +1,21 @@
-{    
+{
     "cameras": [
         {
             "proto_camera_name": "Camera",
             "time_step": 16,
-            "image_topic_name": "camera/image_proc",
-            "info_topic_name": "camera/camera_info",
             "optical_frame": "camera_optical_frame",
-            "FOV": 1.0123,
-            "width": 320,
-            "height": 240
+            "horizontal_field_of_view": 1.04
         }
     ],
     "IMUs": [
         {
             "proto_gyro_name": "Gyro",
             "proto_accel_name": "Accelerometer",
-            "time_step": 8,            
-            "topic_name": "imu/data_raw",
+            "ros_name": "imu",
+            "time_step": 8,
             "frame_name": "imu_frame"
         }
     ],
-    "joint_state_topic_name": "joint_states",
-    "joint_command_topic_name": "joint_commands",
     "joints": [
         {
             "proto_proto_motor_name": "Neck",

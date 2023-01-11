@@ -49,11 +49,20 @@ public:
     // Parameters
     this->declare_parameter<std::string>("host", "127.0.0.1");
     this->declare_parameter<int>("port", 10001);
+    this->declare_parameter<std::string>("devices_file", "resources/devices.json");
 
     // Enable devices
     ActuatorRequests request;
     Json::Value devices;
-    std::ifstream json_file("resources/devices.json");
+    std::ifstream json_file(this->get_parameter("devices_file").as_string());
+
+    // Check if file exists
+    if (!json_file.is_open()) {
+      RCLCPP_ERROR(
+        this->get_logger(),
+        "Could not open devices file. Please check the 'devices_file' parameter.");
+      return;
+    }
     json_file >> devices;
 
     // Publishers
@@ -66,8 +75,7 @@ public:
 
     // Subscriptions
     motor_command_subscription_ = this->create_subscription<sensor_msgs::msg::JointState>(
-      devices["joint_command_topic_name"].asString(), 10,
-      std::bind(&WebotsController::command_callback, this, _1));
+      "joint_command", 10, std::bind(&WebotsController::command_callback, this, _1));
 
     // Timer and its callback
     // simulation does a step, it does not really make sense to run this in any other frequency
@@ -102,9 +110,8 @@ public:
         map_ros_to_proto_.insert({motor_name, motor_name});
       }
     }
-    joint_state_publisher_ =
-      this->create_publisher<sensor_msgs::msg::JointState>(
-      devices["joint_state_topic_name"].asString(), 10);
+    joint_state_publisher_ = this->create_publisher<sensor_msgs::msg::JointState>(
+      "joint_states", 10);
 
     // Bumpers
     for (unsigned int i = 0; i < devices["bumpers"].size(); i++) {
@@ -126,8 +133,7 @@ public:
       bumper_sensor->set_timestep(devices["bumpers"][i]["time_step"].asDouble());
       bumper_publishers_.push_back(
         this->create_publisher<geometry_msgs::msg::WrenchStamped>(
-          devices["bumpers"][i]["topic_name"
-          ].asString(), 10));
+          devices["bumpers"][i]["proto_bumper_name"].asString() + "/data", 10));
     }
 
     // Force sensors 1d
@@ -150,8 +156,7 @@ public:
       force1d_sensor->set_timestep(devices["force_sensors_1d"][i]["time_step"].asDouble());
       force1d_publishers_.push_back(
         this->create_publisher<geometry_msgs::msg::WrenchStamped>(
-          devices["force_sensors_1d"][i][
-            "topic_name"].asString(), 10));
+          devices["force_sensors_1d"][i]["proto_sensor_name"].asString() + "/data", 10));
     }
 
     // Force sensors 3d
@@ -163,8 +168,7 @@ public:
       force3d_sensor->set_timestep(devices["force_sensors_3d"][i]["time_step"].asDouble());
       force3d_publishers_.push_back(
         this->create_publisher<geometry_msgs::msg::WrenchStamped>(
-          devices["force_sensors_3d"][i][
-            "topic_name"].asString(), 10));
+          devices["force_sensors_3d"][i]["proto_sensor_name"].asString() + "/data", 10));
     }
 
     // Force sensors 6d
@@ -176,8 +180,7 @@ public:
       force6d_sensor->set_timestep(devices["force_sensors_6d"][i]["time_step"].asDouble());
       force6d_publishers_.push_back(
         this->create_publisher<geometry_msgs::msg::WrenchStamped>(
-          devices["force_sensors_6d"][i][
-            "topic_name"].asString(), 10));
+          devices["force_sensors_6d"][i]["proto_sensor_name"].asString() + "/data", 10));
     }
 
     // Cameras
@@ -189,29 +192,11 @@ public:
       camera_sensor->set_timestep(devices["cameras"][i]["time_step"].asDouble());
       camera_image_publishers_.push_back(
         this->create_publisher<sensor_msgs::msg::Image>(
-          devices["cameras"][i]["image_topic_name"].
-          asString(), 10));
-
-      // camera info should be latched and only published once
-      rclcpp::QoS qos(rclcpp::KeepLast(1));
-      qos.transient_local().reliable();
+          devices["cameras"][i]["proto_camera_name"].asString() + "/image_raw", 10));
       camera_info_publishers_.push_back(
         this->create_publisher<sensor_msgs::msg::CameraInfo>(
-          devices["cameras"][i]["info_topic_name"].asString(), qos));
-      // calculate and publish the camera info
-      sensor_msgs::msg::CameraInfo camera_info_msg = sensor_msgs::msg::CameraInfo();
-      camera_info_msg.header.frame_id = frame_name;
-      int height = devices["cameras"][i]["height"].asInt();
-      int width = devices["cameras"][i]["width"].asInt();
-      double FOV = devices["cameras"][i]["FOV"].asDouble();
-      camera_info_msg.height = height;
-      camera_info_msg.width = width;
-      double f_y = mat_from_fov_and_resolution(h_fov_to_v_fov(FOV, height, width), height);
-      double f_x = mat_from_fov_and_resolution(FOV, width);
-      camera_info_msg.k = {f_x, 0.0, width / 2.0, 0.0, f_y, height / 2.0, 0.0, 0.0, 1.0};
-      camera_info_msg.p =
-      {f_x, 0.0, width / 2.0, 0.0, 0.0, f_y, height / 2.0, 0.0, 0.0, 0.0, 1.0, 0.0};
-      camera_info_publishers_[i]->publish(camera_info_msg);
+          devices["cameras"][i]["proto_camera_name"].asString() + "/camera_info", 10));
+      camera_fovs_.push_back(devices["cameras"][i]["horizontal_field_of_view"].asDouble());
     }
 
     // IMUs
@@ -228,8 +213,7 @@ public:
       sensor->set_timestep(devices["IMUs"][i]["time_step"].asDouble());
       imu_publishers_.push_back(
         this->create_publisher<sensor_msgs::msg::Imu>(
-          devices["IMUs"][i]["topic_name"].asString(),
-          10));
+          devices["IMUs"][i]["ros_name"].asString() + "/data", 10));
     }
 
     client_->sendRequest(request);
@@ -247,12 +231,12 @@ private:
 
         // publish simulation time
         auto clk = rosgraph_msgs::msg::Clock();
-        clk.clock = rclcpp::Time(measurements.time());
+        clk.clock = ms_to_ros_time(measurements.time());
         clock_publisher_->publish(clk);
         // publish wall clock time of server
         auto ref_clk = sensor_msgs::msg::TimeReference();
-        ref_clk.header.stamp = rclcpp::Time(measurements.real_time());
-        ref_clk.time_ref = rclcpp::Time(measurements.time());
+        ref_clk.header.stamp = ms_to_ros_time(measurements.real_time());
+        ref_clk.time_ref = ms_to_ros_time(measurements.time());
         ref_clk.source = "server";
         real_clock_publisher_->publish(ref_clk);
 
@@ -290,7 +274,7 @@ private:
     // maybe differ if not all have the same timestep??
     for (int i = 0; i < measurements.bumpers_size(); i++) {
       auto wrench = geometry_msgs::msg::WrenchStamped();
-      wrench.header.stamp = rclcpp::Time(measurements.time());
+      wrench.header.stamp = ms_to_ros_time(measurements.time());
       wrench.header.frame_id = bumper_frame_names_[i];
       bool bumper_active = measurements.bumpers(i).value();
       // we encode the binary bumper force as 1N as this can then be displayed in RViz
@@ -317,7 +301,7 @@ private:
   {
     for (int i = 0; i < measurements.forces_size(); i++) {
       auto wrench = geometry_msgs::msg::WrenchStamped();
-      wrench.header.stamp = rclcpp::Time(measurements.time());
+      wrench.header.stamp = ms_to_ros_time(measurements.time());
       wrench.header.frame_id = force1d_frame_names_[i];
       float force = measurements.forces(i).value();
 
@@ -347,7 +331,7 @@ private:
   {
     for (int i = 0; i < measurements.force3ds_size(); i++) {
       auto wrench = geometry_msgs::msg::WrenchStamped();
-      wrench.header.stamp = rclcpp::Time(measurements.time());
+      wrench.header.stamp = ms_to_ros_time(measurements.time());
       wrench.header.frame_id = force3d_frame_names_[i];
       wrench.wrench.force.x = measurements.force3ds(i).value().x();
       wrench.wrench.force.y = measurements.force3ds(i).value().y();
@@ -360,7 +344,7 @@ private:
   {
     for (int i = 0; i < measurements.force6ds_size(); i++) {
       auto wrench = geometry_msgs::msg::WrenchStamped();
-      wrench.header.stamp = rclcpp::Time(measurements.time());
+      wrench.header.stamp = ms_to_ros_time(measurements.time());
       wrench.header.frame_id = force6d_frame_names_[i];
       wrench.wrench.force.x = measurements.force6ds(i).force().x();
       wrench.wrench.force.y = measurements.force6ds(i).force().y();
@@ -389,9 +373,29 @@ private:
       img_bridge = cv_bridge::CvImage(
         std_msgs::msg::Header(), sensor_msgs::image_encodings::BGR8, img);
       img_bridge.toImageMsg(imgmsg);
-      imgmsg.header.stamp = rclcpp::Time(measurements.time());
+      imgmsg.header.stamp = ms_to_ros_time(measurements.time());
       imgmsg.header.frame_id = camera_frame_names_[i];
       camera_image_publishers_[i]->publish(imgmsg);
+
+      // calculate and publish the camera info
+      sensor_msgs::msg::CameraInfo camera_info_msg = sensor_msgs::msg::CameraInfo();
+      camera_info_msg.header = imgmsg.header;
+      int height = sensor_data.height();
+      int width = sensor_data.width();
+      camera_info_msg.height = height;
+      camera_info_msg.width = width;
+      double f_y = mat_from_fov_and_resolution(
+        h_fov_to_v_fov(camera_fovs_[i], height, width), height);
+      double f_x = mat_from_fov_and_resolution(camera_fovs_[i], width);
+      camera_info_msg.k = {
+        f_x, 0.0, width / 2.0,
+        0.0, f_y, height / 2.0,
+        0.0, 0.0, 1.0};
+      camera_info_msg.p = {
+        f_x, 0.0, width / 2.0, 0.0,
+        0.0, f_y, height / 2.0, 0.0,
+        0.0, 0.0, 1.0, 0.0};
+      camera_info_publishers_[i]->publish(camera_info_msg);
     }
   }
 
@@ -403,7 +407,7 @@ private:
       const GyroMeasurement & gyro_data = measurements.gyros(i);
 
       auto imu_msg = sensor_msgs::msg::Imu();
-      imu_msg.header.stamp = rclcpp::Time(measurements.time());
+      imu_msg.header.stamp = ms_to_ros_time(measurements.time());
       imu_msg.header.frame_id = imu_frame_names_[i];
       imu_msg.linear_acceleration.x = accel_data.value().x();
       imu_msg.linear_acceleration.y = accel_data.value().y();
@@ -426,7 +430,7 @@ private:
       jointmsg.name.push_back(ros_name);
       jointmsg.position.push_back(measurements.position_sensors(i).value());
     }
-    jointmsg.header.stamp = rclcpp::Time(measurements.time());
+    jointmsg.header.stamp = ms_to_ros_time(measurements.time());
     joint_state_publisher_->publish(jointmsg);
   }
 
@@ -471,6 +475,12 @@ private:
   {
     return 2 * atan(tan(h_fov * 0.5) * (height / width));
   }
+
+  rclcpp::Time ms_to_ros_time(u_int32_t ms)
+  {
+    return rclcpp::Time(ms / 1000, (ms % 1000) * 1000000);
+  }
+
   rclcpp::TimerBase::SharedPtr timer_;
 
   rclcpp::Publisher<rosgraph_msgs::msg::Clock>::SharedPtr clock_publisher_;
@@ -496,6 +506,7 @@ private:
   std::vector<std::string> force6d_frame_names_;
   std::vector<std::string> camera_frame_names_;
   std::vector<std::string> imu_frame_names_;
+  std::vector<double> camera_fovs_;
   NetworkClient * client_;
 };
 

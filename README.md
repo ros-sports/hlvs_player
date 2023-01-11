@@ -12,7 +12,7 @@ This node is currently available only for ROS 2.
 ## Configuration
 The package comes with the default configuration for a Darwin-OP robot, but you can easily change it to your robot.
 The `resources/devices.json` contains the definition of the devices (sensors and actuators).
-You can set the used network configuration and the ROS topic names via ROS parameters (see `launch/hlvs_player.launch`).
+You can set the used network configuration and the ROS topic names via ROS parameters (see `launch/example.launch`).
 Remember to rebuild the package after changing the json file.
 
 ## Usage
@@ -52,7 +52,7 @@ Run the node using one of these commands:
 ```sh
 # Replace host and port with appropriate values
 ros2 run hlvs_player hlvs_player --ros-args -p host:="127.0.0.1" -p port:=10001
-ros2 launch hlvs_player hlvs_player.launch
+ros2 launch hlvs_player example.launch
 ```
 
 Now you can access sensor data and publish commands to be performed on the robot.
