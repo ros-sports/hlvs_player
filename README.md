@@ -47,11 +47,17 @@ Open a new terminal and source your overlay using:
 source install/local_setup.bash
 ```
 
-Run the node using one of these commands:
+Set the simulator address:
 
 ```sh
 # Replace host and port with appropriate values
-ros2 run hlvs_player hlvs_player --ros-args -p host:="127.0.0.1" -p port:=10001
+export ROBOCUP_SIMULATOR_ADDR=127.0.0.1:10001
+```
+
+Run the node using one of these commands:
+
+```sh
+ros2 run hlvs_player hlvs_player
 ros2 launch hlvs_player example.launch
 ```
 

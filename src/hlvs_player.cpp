@@ -47,8 +47,6 @@ public:
   : Node("hlvs_player")
   {
     // Parameters
-    this->declare_parameter<std::string>("host", "127.0.0.1");
-    this->declare_parameter<int>("port", 10001);
     this->declare_parameter<std::string>("devices_file", "resources/devices.json");
 
     // Enable devices
@@ -82,10 +80,30 @@ public:
     timer_ = this->create_wall_timer(8ms, std::bind(&WebotsController::timer_callback, this));
 
     // Client construction and connecting
-    std::string host;
+    if (!std::getenv("ROBOCUP_SIMULATOR_ADDR")) {
+      RCLCPP_ERROR(
+        this->get_logger(),
+        "The environment variable ROBOCUP_SIMULATOR_ADDR is not set.");
+      return;
+    }
+    std::string robocup_simulator_addr = std::getenv("ROBOCUP_SIMULATOR_ADDR");
+    size_t colon_pos = robocup_simulator_addr.find_first_of(':');
+    if (colon_pos == std::string::npos) {
+      RCLCPP_ERROR(
+        this->get_logger(),
+        "ROBOCUP_SIMULATOR_ADDR should have the form host:port.");
+      return;
+    }
+    std::string host = robocup_simulator_addr.substr(0, colon_pos);
     int port;
-    this->get_parameter("host", host);
-    this->get_parameter("port", port);
+    try {
+      port = std::stoi(robocup_simulator_addr.substr(colon_pos + 1));
+    } catch (std::invalid_argument const & exc) {
+      RCLCPP_ERROR(
+        this->get_logger(),
+        "ROBOCUP_SIMULATOR_ADDR must have a numeric port.");
+      return;
+    }
     client_ = new NetworkClient(host, port, 3, this->get_logger());
     client_->connectClient();
 
