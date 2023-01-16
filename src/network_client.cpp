@@ -17,7 +17,6 @@
 float NetworkClient::history_period_ = 5;
 // Adding some margin for other data than image
 int NetworkClient::max_answer_size_ = 1920 * 1080 * 3 + 1000;
-int NetworkClient::max_attempts_ = 20;
 int NetworkClient::wait_time_sec_ = 1;
 
 static void close_socket(int fd)
@@ -104,7 +103,7 @@ bool NetworkClient::connectClient()
   }
   int attempt = 1;
   bool connected = false;
-  while (attempt <= max_attempts_) {
+  while (true) {
     if (!rclcpp::ok()) {
       exit(0);
     }
@@ -114,8 +113,8 @@ bool NetworkClient::connectClient()
       break;
     }
     fprintf(
-      stderr, "Failed to connect to %s:%d (attempt %d / %d)\n",
-      host_.c_str(), port_, attempt, max_attempts_);
+      stderr, "Failed to connect to %s:%d (attempt %d)\n",
+      host_.c_str(), port_, attempt);
     attempt++;
     sleep(wait_time_sec_);
   }
