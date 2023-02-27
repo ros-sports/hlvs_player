@@ -77,6 +77,7 @@ public:
 
     // Timer and its callback
     // simulation does a step, it does not really make sense to run this in any other frequency
+    // TODO: make rate configurable
     timer_ = this->create_wall_timer(8ms, std::bind(&WebotsController::timer_callback, this));
 
     // Client construction and connecting
@@ -243,8 +244,6 @@ private:
   {
     if (client_->isOk()) {
       try {
-        ActuatorRequests request;
-        client_->sendRequest(request);
         SensorMeasurements measurements = client_->receive();
 
         // publish simulation time
