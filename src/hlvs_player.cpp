@@ -490,7 +490,7 @@ private:
   }
   double h_fov_to_v_fov(double h_fov, int height, int width)
   {
-    return 2 * atan(tan(h_fov * 0.5) * (height / width));
+    return 2 * atan(tan(h_fov * 0.5) * (height / (double)width));
   }
 
   rclcpp::Time ms_to_ros_time(u_int32_t ms)
