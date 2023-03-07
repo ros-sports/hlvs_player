@@ -444,14 +444,14 @@ private:
 
   void publishJointStates(const SensorMeasurements & measurements)
   {
-    auto jointmsg = sensor_msgs::msg::JointState();
+    auto joint_msg = sensor_msgs::msg::JointState();
     for (int i = 0; i < measurements.position_sensors_size(); i++) {
       std::string ros_name = map_proto_to_ros_[measurements.position_sensors(i).name()];
-      jointmsg.name.push_back(ros_name);
-      jointmsg.position.push_back(measurements.position_sensors(i).value());
+      joint_msg.name.push_back(ros_name);
+      joint_msg.position.push_back(measurements.position_sensors(i).value());
     }
-    jointmsg.header.stamp = ms_to_ros_time(measurements.time());
-    joint_state_publisher_->publish(jointmsg);
+    joint_msg.header.stamp = ms_to_ros_time(measurements.time());
+    joint_state_publisher_->publish(joint_msg);
   }
 
   void command_callback(const sensor_msgs::msg::JointState::SharedPtr msg)
