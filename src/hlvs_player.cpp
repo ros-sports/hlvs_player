@@ -75,8 +75,12 @@ public:
     motor_command_subscription_ = this->create_subscription<sensor_msgs::msg::JointState>(
       "joint_command", 10, std::bind(&WebotsController::command_callback, this, _1));
 
-    // Timer and its callback
-    // simulation does a step, it does not really make sense to run this in any other frequency
+    // Timer and its callback for receiving and handling measurements from the simulation
+    // It is guaranteed by the rules that the simulation does not run faster than real time
+    // and with 8ms.
+    // Worst case, if the simulation runs in real time: we handle new measurements 8ms after they
+    // were sent to us.
+    // In average, we handle new measurements 4ms after they were sent to us.
     timer_ = this->create_wall_timer(8ms, std::bind(&WebotsController::timer_callback, this));
 
     // Client construction and connecting
@@ -243,8 +247,6 @@ private:
   {
     if (client_->isOk()) {
       try {
-        ActuatorRequests request;
-        client_->sendRequest(request);
         SensorMeasurements measurements = client_->receive();
 
         // publish simulation time
@@ -442,14 +444,14 @@ private:
 
   void publishJointStates(const SensorMeasurements & measurements)
   {
-    auto jointmsg = sensor_msgs::msg::JointState();
+    auto joint_msg = sensor_msgs::msg::JointState();
     for (int i = 0; i < measurements.position_sensors_size(); i++) {
       std::string ros_name = map_proto_to_ros_[measurements.position_sensors(i).name()];
-      jointmsg.name.push_back(ros_name);
-      jointmsg.position.push_back(measurements.position_sensors(i).value());
+      joint_msg.name.push_back(ros_name);
+      joint_msg.position.push_back(measurements.position_sensors(i).value());
     }
-    jointmsg.header.stamp = ms_to_ros_time(measurements.time());
-    joint_state_publisher_->publish(jointmsg);
+    joint_msg.header.stamp = ms_to_ros_time(measurements.time());
+    joint_state_publisher_->publish(joint_msg);
   }
 
   void command_callback(const sensor_msgs::msg::JointState::SharedPtr msg)
@@ -491,7 +493,7 @@ private:
   }
   double h_fov_to_v_fov(double h_fov, int height, int width)
   {
-    return 2 * atan(tan(h_fov * 0.5) * (height / width));
+    return 2 * atan(tan(h_fov * 0.5) * (height / static_cast<double>(width)));
   }
 
   rclcpp::Time ms_to_ros_time(u_int32_t ms)
