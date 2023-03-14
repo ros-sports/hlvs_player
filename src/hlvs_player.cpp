@@ -477,7 +477,7 @@ private:
         motor_position->set_name(proto_name);
         motor_position->set_position(msg->position[i]);
         if (msg->velocity.size() != 0) {
-          // if additional velocity is give, use it as maximal speed
+          // if additional velocity is given, use it as maximal speed
           MotorVelocity * motor_velocity = request.add_motor_velocities();
           motor_velocity->set_name(proto_name);
           motor_velocity->set_velocity(msg->velocity[i]);
