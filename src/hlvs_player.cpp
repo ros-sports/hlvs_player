@@ -26,7 +26,7 @@
 #include <rclcpp/time.hpp>
 #include <geometry_msgs/msg/wrench_stamped.hpp>
 #include <std_msgs/msg/string.hpp>
-#include <rclcpp/executors/events_executor/events_executor.hpp>
+#include <rclcpp/experimental/executors/events_executor/events_executor.hpp>
 #include <rosgraph_msgs/msg/clock.hpp>
 #include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
@@ -537,7 +537,7 @@ int main(int argc, char * argv[])
   auto node = std::make_shared<WebotsController>();
 
   // we use the event executor since it greatly reduces the CPU usage
-  rclcpp::executors::EventsExecutor exec;
+  rclcpp::experimental::executors::EventsExecutor exec;
   exec.add_node(node);
   exec.spin();
 
