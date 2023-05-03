@@ -33,7 +33,3 @@ jobs:
       - uses: ros-tooling/action-ros-ci@v0.3
         with:
           target-ros2-distro: rolling
-          # Specify package name, so tests only run on the packages in this repo even
-          # if we have other packages in the workspace.
-          package-name: hlvs_player
-          vcs-repo-file-url: dependencies.repos
