@@ -13,7 +13,6 @@
 
   <depend>cv_bridge</depend>
   <depend>image_transport</depend>
-  <depend>irobot_events_executor</depend>
   <depend>libjsoncpp-dev</depend>
   <depend>protobuf-dev</depend>
   <depend>rosgraph_msgs</depend>
