@@ -1,6 +1,7 @@
 # Humanoid League Virtual Season Player
 
-[![Build and Test (rolling)](https://github.com/ros-sports/hlvs_player/actions/workflows/build_and_test_rolling.yaml/badge.svg?branch=main)](https://github.com/ros-sports/hlvs_player/actions/workflows/build_and_test_rolling.yaml?query=branch:main)
+[![Build and Test (iron)](../../actions/workflows/build_and_test_iron.yaml/badge.svg?branch=main)](../../actions/workflows/build_and_test_iron.yaml?query=branch:main)
+[![Build and Test (rolling)](../../actions/workflows/build_and_test_rolling.yaml/badge.svg?branch=main)](../../actions/workflows/build_and_test_rolling.yaml?query=branch:main)
 
 ## Introduction
 This repository provides a ROS 2 package named `hlvs_player` that can be used to communicate with the Webots server while using the Player/Client API for the Humanoid League Virtual Season.
