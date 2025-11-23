@@ -41,13 +41,8 @@ add_executable(hlvs_player
   ${ProtoSources}
   ${ProtoHeaders}
   )
-target_include_directories(hlvs_player
-  PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
-target_link_libraries(hlvs_player
-  ${OpenCV_LIBRARIES}
-  jsoncpp_lib)
+target_include_directories(hlvs_player PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>)
+target_link_libraries(hlvs_player ${OpenCV_LIBRARIES} jsoncpp_lib)
 ament_target_dependencies(hlvs_player
   rclcpp
   std_msgs
