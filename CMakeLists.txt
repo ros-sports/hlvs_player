@@ -32,7 +32,7 @@ find_package(image_transport REQUIRED)
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(JSONCPP jsoncpp)
+find_package(jsoncpp REQUIRED)
 include_directories(${JSONCPP_INCLUDE_DIRS})
 
 add_executable(hlvs_player src/hlvs_player.cpp src/network_client.cpp ${ProtoSources} ${ProtoHeaders})
