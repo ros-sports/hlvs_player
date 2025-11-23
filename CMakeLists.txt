@@ -35,10 +35,19 @@ find_package(PkgConfig REQUIRED)
 find_package(jsoncpp REQUIRED)
 include_directories(${JSONCPP_INCLUDE_DIRS})
 
-add_executable(hlvs_player src/hlvs_player.cpp src/network_client.cpp ${ProtoSources} ${ProtoHeaders})
-target_include_directories(hlvs_player PUBLIC
-$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-$<INSTALL_INTERFACE:include>)
+add_executable(hlvs_player
+  src/hlvs_player.cpp
+  src/network_client.cpp
+  ${ProtoSources}
+  ${ProtoHeaders}
+  )
+target_include_directories(hlvs_player
+  PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_link_libraries(hlvs_player
+  ${OpenCV_LIBRARIES}
+  jsoncpp_lib)
 ament_target_dependencies(hlvs_player
   rclcpp
   std_msgs
@@ -47,7 +56,7 @@ ament_target_dependencies(hlvs_player
   image_transport
   Protobuf
   OpenCV
-  JSONCPP)
+  jsoncpp)
 
 install(TARGETS hlvs_player
   EXPORT export_${PROJECT_NAME}
